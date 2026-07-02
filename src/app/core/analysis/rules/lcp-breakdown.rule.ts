@@ -10,13 +10,19 @@ export class LcpBreakdownRule implements AnalysisRule {
     const metrics: MetricScore[] = [];
     const actionItems: ActionItem[] = [];
 
+    // Try standard FCP first, fallback to Paint event for soft navigations
     const fcpEvent = trace.traceEvents.find(
       e => e.name === 'firstContentfulPaint' && e.cat?.includes('blink.user_timing')
+    ) ?? trace.traceEvents.find(
+      e => e.name === 'Paint' && e.cat?.includes('devtools.timeline') && e.ts > trace.navigationStart
     );
 
     // Chrome can emit multiple LCP candidates; the last one is the real LCP
+    // Also check soft navigation candidates
     const lcpCandidates = trace.traceEvents.filter(
-      e => e.name === 'largestContentfulPaint::Candidate' && e.cat === 'loading'
+      e => (e.name === 'largestContentfulPaint::Candidate' ||
+            e.name === 'largestContentfulPaint::CandidateForSoftNavigation') &&
+           e.cat?.includes('loading')
     );
     const lcpEvent = lcpCandidates.length > 0 ? lcpCandidates[lcpCandidates.length - 1] : undefined;
 

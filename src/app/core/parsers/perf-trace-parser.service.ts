@@ -56,10 +56,19 @@ export class PerfTraceParserService {
   }
 
   private findNavigationStart(events: TraceEvent[]): number {
+    // Try standard navigation first
     const navStart = events.find(
-      e => e.name === 'navigationStart' && e.cat === 'blink.user_timing'
+      e => e.name === 'navigationStart' && e.cat?.includes('blink.user_timing')
     );
-    return navStart?.ts ?? events[0]?.ts ?? 0;
+    if (navStart) return navStart.ts;
+
+    // Fallback: soft navigation start
+    const softNavStart = events.find(
+      e => e.name === 'SoftNavigationStart' && e.cat?.includes('loading')
+    );
+    if (softNavStart) return softNavStart.ts;
+
+    return events[0]?.ts ?? 0;
   }
 
   private extractMetadata(events: TraceEvent[]): TraceMetadata {
