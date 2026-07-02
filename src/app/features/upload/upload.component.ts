@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormatDetectorService } from '../../core/parsers/format-detector.service';
+import { TraceStoreService } from '../../core/services/trace-store.service';
 import { readFileText } from '../../core/parsers/gzip.util';
 
 @Component({
@@ -73,6 +74,7 @@ import { readFileText } from '../../core/parsers/gzip.util';
 export class UploadComponent {
   private readonly router = inject(Router);
   private readonly formatDetector = inject(FormatDetectorService);
+  private readonly traceStore = inject(TraceStoreService);
 
   isDragOver = signal(false);
   isProcessing = signal(false);
@@ -130,12 +132,13 @@ export class UploadComponent {
           name: d.name,
           size: d.size,
           format: d.format,
-          content: await readFileText(d.file),
+          content: JSON.parse(await readFileText(d.file)),
         }))
       );
-      sessionStorage.setItem('perflens-files', JSON.stringify(fileData));
+      this.traceStore.store(fileData);
       this.router.navigate(['/dashboard']);
     } catch (e) {
+      console.error('Failed to process file(s):', e);
       this.error.set('Failed to read file(s). Please try again.');
       this.isProcessing.set(false);
     }

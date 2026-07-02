@@ -1,18 +1,11 @@
-import { Component, inject, signal, OnInit, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { PerfTraceParserService } from '../../core/parsers/perf-trace-parser.service';
 import { RuleEngineService } from '../../core/analysis/rule-engine.service';
 import { AnalysisResult } from '../../core/models/analysis-result.model';
+import { TraceStoreService } from '../../core/services/trace-store.service';
 import { ScoreCardsComponent } from './score-cards.component';
 import { ActionItemsComponent } from './action-items.component';
-
-interface StoredFile {
-  name: string;
-  size: number;
-  format: string;
-  content: string;
-}
 
 @Component({
   selector: 'app-dashboard',
@@ -85,33 +78,30 @@ export class DashboardComponent implements OnInit {
   private readonly parser = inject(PerfTraceParserService);
   private readonly ruleEngine = inject(RuleEngineService);
   private readonly router = inject(Router);
-  private readonly platformId = inject(PLATFORM_ID);
+  private readonly traceStore = inject(TraceStoreService);
 
   result = signal<AnalysisResult | null>(null);
   error = signal<string | null>(null);
 
   ngOnInit(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-
-    const raw = sessionStorage.getItem('perflens-files');
-    if (!raw) {
+    if (!this.traceStore.hasFiles()) {
       this.router.navigate(['/']);
       return;
     }
 
     try {
-      const files: StoredFile[] = JSON.parse(raw);
+      const files = this.traceStore.files();
       const file = files[0]; // Phase 1: single file analysis
       if (!file) {
         this.router.navigate(['/']);
         return;
       }
 
-      const content = JSON.parse(file.content);
-      const parsed = this.parser.parse(content);
+      const parsed = this.parser.parse(file.content);
       const analysis = this.ruleEngine.analyze(parsed, file.name, file.size);
       this.result.set(analysis);
     } catch (e) {
+      console.error('Failed to analyze trace:', e);
       this.error.set('Failed to analyze trace. The file may be corrupted or in an unsupported format.');
     }
   }
