@@ -1,15 +1,28 @@
 import { Injectable } from '@angular/core';
 import { FileFormat } from '../models/trace-event.model';
+import { isGzipped, readFileText } from './gzip.util';
 
 @Injectable({ providedIn: 'root' })
 export class FormatDetectorService {
   async detect(file: File): Promise<FileFormat> {
-    const text = await this.readHead(file, 4096);
+    const headBuffer = await file.slice(0, 4096).arrayBuffer();
 
-    if (this.isV8Log(text)) return 'v8-log';
+    // If gzipped, decompress first then detect the inner content
+    if (isGzipped(headBuffer)) {
+      const text = await readFileText(file);
+      return this.detectFromText(text, file.name);
+    }
+
+    const text = new TextDecoder().decode(headBuffer);
+    return this.detectFromText(text, file.name, file);
+  }
+
+  private async detectFromText(head: string, name: string, originalFile?: File): Promise<FileFormat> {
+    if (this.isV8Log(head)) return 'v8-log';
 
     try {
-      const json = JSON.parse(await file.text());
+      const fullText = originalFile ? await originalFile.text() : head;
+      const json = JSON.parse(fullText);
       return this.detectJson(json);
     } catch {
       return 'unknown';
@@ -50,12 +63,4 @@ export class FormatDetectorService {
            firstLine.startsWith('tick');
   }
 
-  private readHead(file: File, bytes: number): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsText(file.slice(0, bytes));
-    });
-  }
 }

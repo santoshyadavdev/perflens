@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormatDetectorService } from '../../core/parsers/format-detector.service';
+import { readFileText } from '../../core/parsers/gzip.util';
 
 @Component({
   selector: 'app-upload',
@@ -35,7 +36,7 @@ import { FormatDetectorService } from '../../core/parsers/format-detector.servic
         } @else {
           <div class="text-emerald-400 mb-2">📁 Drag & drop or click to browse</div>
           <p class="text-gray-500 text-sm">
-            Supports .json traces, .heapsnapshot, .cpuprofile, V8 .log
+            Supports .json/.json.gz traces, .heapsnapshot, .cpuprofile, V8 .log
           </p>
           <p class="text-gray-600 text-xs mt-2">Multiple files supported for comparison</p>
         }
@@ -45,7 +46,7 @@ import { FormatDetectorService } from '../../core/parsers/format-detector.servic
         #fileInput
         type="file"
         multiple
-        accept=".json,.heapsnapshot,.cpuprofile,.log"
+        accept=".json,.json.gz,.gz,.heapsnapshot,.cpuprofile,.log"
         class="hidden"
         (change)="onFileInputChange($event)"
       />
@@ -129,7 +130,7 @@ export class UploadComponent {
           name: d.name,
           size: d.size,
           format: d.format,
-          content: await d.file.text(),
+          content: await readFileText(d.file),
         }))
       );
       sessionStorage.setItem('perflens-files', JSON.stringify(fileData));

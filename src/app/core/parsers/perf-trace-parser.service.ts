@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { TraceEvent, ParsedTrace, TraceMetadata } from '../models/trace-event.model';
+import { readFileText } from './gzip.util';
 
 @Injectable({ providedIn: 'root' })
 export class PerfTraceParserService {
@@ -13,7 +14,7 @@ export class PerfTraceParserService {
   }
 
   async parseFile(file: File): Promise<ParsedTrace> {
-    const text = await file.text();
+    const text = await readFileText(file);
     const json = JSON.parse(text);
     return this.parse(json);
   }
