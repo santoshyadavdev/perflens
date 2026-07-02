@@ -1,12 +1,11 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormatDetectorService } from '../../core/parsers/format-detector.service';
-import { FileSizePipe } from '../../shared/pipes/file-size.pipe';
 
 @Component({
   selector: 'app-upload',
   standalone: true,
-  imports: [FileSizePipe],
+  imports: [],
   template: `
     <div class="min-h-screen flex flex-col items-center justify-center px-4">
       <div class="text-center mb-8">
