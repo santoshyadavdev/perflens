@@ -10,16 +10,19 @@ export class LcpBreakdownRule implements AnalysisRule {
     const metrics: MetricScore[] = [];
     const actionItems: ActionItem[] = [];
 
-    const lcpEvent = trace.traceEvents.find(
+    const fcpEvent = trace.traceEvents.find(
+      e => e.name === 'firstContentfulPaint' && e.cat?.includes('blink.user_timing')
+    );
+
+    // Chrome can emit multiple LCP candidates; the last one is the real LCP
+    const lcpCandidates = trace.traceEvents.filter(
       e => e.name === 'largestContentfulPaint::Candidate' && e.cat === 'loading'
     );
+    const lcpEvent = lcpCandidates.length > 0 ? lcpCandidates[lcpCandidates.length - 1] : undefined;
 
-    const fcpEvent = trace.traceEvents.find(
-      e => e.name === 'firstContentfulPaint' && e.cat === 'blink.user_timing'
-    );
+    const fcpMs = fcpEvent ? (fcpEvent.ts - trace.navigationStart) / 1000 : undefined;
 
-    if (fcpEvent) {
-      const fcpMs = (fcpEvent.ts - trace.navigationStart) / 1000;
+    if (fcpEvent && fcpMs !== undefined) {
       metrics.push({
         name: 'First Contentful Paint',
         shortName: 'FCP',
@@ -51,8 +54,7 @@ export class LcpBreakdownRule implements AnalysisRule {
       const elementType = (lcpData?.['type'] as string) ?? 'unknown';
       const elementUrl = lcpData?.['url'] as string | undefined;
 
-      const fcpMs = fcpEvent ? (fcpEvent.ts - trace.navigationStart) / 1000 : undefined;
-      const renderDelay = fcpMs ? lcpMs - fcpMs : undefined;
+      const renderDelay = fcpMs !== undefined ? lcpMs - fcpMs : undefined;
 
       let detail = `LCP is ${(lcpMs / 1000).toFixed(1)}s (threshold: 2.5s). `;
       detail += `LCP element: <${elementType}>`;

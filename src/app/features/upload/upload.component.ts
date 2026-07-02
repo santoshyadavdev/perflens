@@ -20,6 +20,8 @@ import { readFileText } from '../../core/parsers/gzip.util';
 
       <div
         data-testid="drop-zone"
+        role="button"
+        tabindex="0"
         class="border-2 border-dashed border-gray-700 rounded-xl p-12 text-center cursor-pointer
                hover:border-emerald-500/50 transition-colors max-w-lg w-full"
         [class.border-emerald-500]="isDragOver()"
@@ -28,6 +30,8 @@ import { readFileText } from '../../core/parsers/gzip.util';
         (dragleave)="isDragOver.set(false)"
         (drop)="onDrop($event)"
         (click)="fileInput.click()"
+        (keydown.enter)="fileInput.click()"
+        (keydown.space)="fileInput.click(); $event.preventDefault()"
       >
         @if (isProcessing()) {
           <div class="text-emerald-400 animate-pulse">

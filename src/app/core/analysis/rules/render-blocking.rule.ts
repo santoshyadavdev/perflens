@@ -14,7 +14,7 @@ export class RenderBlockingRule implements AnalysisRule {
 
   analyze(trace: ParsedTrace): RuleResult {
     const fcpEvent = trace.traceEvents.find(
-      e => e.name === 'firstContentfulPaint' && e.cat === 'blink.user_timing'
+      e => e.name === 'firstContentfulPaint' && e.cat?.includes('blink.user_timing')
     );
     if (!fcpEvent) return { actionItems: [], metrics: [] };
 

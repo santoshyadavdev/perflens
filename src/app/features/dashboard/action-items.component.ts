@@ -41,14 +41,16 @@ export class ShortenUrlPipe implements PipeTransform {
             </div>
             <div class="flex items-center gap-2">
               <span class="text-gray-500 text-xs px-2 py-0.5 bg-gray-800 rounded">{{ item.metric }}</span>
-              <button data-testid="expand-btn" class="text-gray-500 text-xs">
+              <button data-testid="expand-btn" class="text-gray-500 text-xs"
+                [attr.aria-expanded]="expandedIds().has(item.id)"
+                [attr.aria-controls]="'detail-' + item.id">
                 {{ expandedIds().has(item.id) ? '▲' : '▼' }}
               </button>
             </div>
           </div>
 
           @if (expandedIds().has(item.id)) {
-            <div data-testid="action-detail" class="mt-3 space-y-3">
+            <div data-testid="action-detail" [id]="'detail-' + item.id" class="mt-3 space-y-3">
               <!-- Detail with breakdown -->
               <pre class="text-gray-400 text-sm whitespace-pre-wrap font-sans leading-relaxed">{{ item.detail }}</pre>
 

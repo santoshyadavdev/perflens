@@ -10,19 +10,42 @@ export class FormatDetectorService {
     // If gzipped, decompress first then detect the inner content
     if (isGzipped(headBuffer)) {
       const text = await readFileText(file);
-      return this.detectFromText(text, file.name);
+      return this.detectFromText(text);
     }
 
-    const text = new TextDecoder().decode(headBuffer);
-    return this.detectFromText(text, file.name, file);
+    const head = new TextDecoder().decode(headBuffer);
+    return this.detectFromHead(head);
   }
 
-  private async detectFromText(head: string, name: string, originalFile?: File): Promise<FileFormat> {
+  private detectFromHead(head: string): FileFormat {
     if (this.isV8Log(head)) return 'v8-log';
 
+    const trimmed = head.trimStart();
+
+    // Array format: [{"ph":...}]
+    if (trimmed.startsWith('[')) {
+      if (/\{\s*"ph"\s*:/.test(trimmed)) return 'perf-trace';
+      return 'unknown';
+    }
+
+    if (trimmed.startsWith('{')) {
+      if (/"traceEvents"\s*:/.test(trimmed)) return 'perf-trace';
+      if (/"snapshot"\s*:.*"meta"\s*:/s.test(trimmed)) return 'heap-snapshot';
+      if (/"nodes"\s*:/.test(trimmed) && /"startTime"\s*:/.test(trimmed)) return 'cpu-profile';
+    }
+
+    return 'unknown';
+  }
+
+  private detectFromText(text: string): FileFormat {
+    // For decompressed gzip content, use head-based detection first
+    const head = text.slice(0, 4096);
+    const result = this.detectFromHead(head);
+    if (result !== 'unknown') return result;
+
+    // Fall back to full parse for ambiguous cases
     try {
-      const fullText = originalFile ? await originalFile.text() : head;
-      const json = JSON.parse(fullText);
+      const json = JSON.parse(text);
       return this.detectJson(json);
     } catch {
       return 'unknown';

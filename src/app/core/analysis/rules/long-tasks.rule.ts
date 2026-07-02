@@ -14,7 +14,7 @@ export class LongTasksRule implements AnalysisRule {
     );
 
     const topLevelTasks = this.findTopLevelTasks(mainThreadEvents);
-    const actionItems = mainThreadEvents.map((task, i) => this.taskToActionItem(task, trace, i));
+    const actionItems = topLevelTasks.map((task, i) => this.taskToActionItem(task, trace, i));
     const tbt = this.computeTbt(topLevelTasks);
 
     const tbtMetric: MetricScore = {

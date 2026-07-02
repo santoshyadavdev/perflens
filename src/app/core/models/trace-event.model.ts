@@ -1,7 +1,7 @@
 export interface TraceEvent {
   name: string;
   cat: string;
-  ph: string; // 'B' begin, 'E' end, 'X' complete, 'I' instant, 'R' mark
+  ph: 'X' | 'B' | 'E' | 'I' | 'C' | 'M' | 'N' | 'R' | 'S' | 'T' | 'F' | 'P';
   ts: number; // microseconds
   dur?: number; // microseconds (for 'X' complete events)
   pid: number;

@@ -9,7 +9,6 @@ import { ActionItemsComponent } from './action-items.component';
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,
   imports: [ScoreCardsComponent, ActionItemsComponent],
   template: `
     <div class="min-h-screen">
@@ -17,8 +16,8 @@ import { ActionItemsComponent } from './action-items.component';
       <nav class="bg-[#161b26] px-5 py-3 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <span class="text-emerald-400 font-bold text-lg cursor-pointer">⚡ PerfLens</span>
-          @if (result()) {
-            <span class="text-gray-500 text-sm">{{ result()!.fileName }}</span>
+          @if (result(); as r) {
+            <span class="text-gray-500 text-sm">{{ r.fileName }}</span>
           }
         </div>
         <div class="flex items-center gap-4 text-sm text-gray-400">
@@ -94,6 +93,11 @@ export class DashboardComponent implements OnInit {
       const file = files[0]; // Phase 1: single file analysis
       if (!file) {
         this.router.navigate(['/']);
+        return;
+      }
+
+      if (file.format !== 'perf-trace') {
+        this.error.set(`${file.format} format is not yet supported in Phase 1. Only performance traces (.json) are supported.`);
         return;
       }
 
