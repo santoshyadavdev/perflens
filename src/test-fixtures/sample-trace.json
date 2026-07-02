@@ -1,0 +1,17 @@
+{
+  "traceEvents": [
+    {"name": "TracingStartedInBrowser", "cat": "disabled-by-default-devtools.timeline", "ph": "I", "ts": 1000000, "pid": 1, "tid": 1, "args": {"data": {"frameTreeNodeId": 1}}},
+    {"name": "navigationStart", "cat": "blink.user_timing", "ph": "R", "ts": 1000000, "pid": 1, "tid": 2, "args": {}},
+    {"name": "ResourceSendRequest", "cat": "devtools.timeline", "ph": "I", "ts": 1010000, "pid": 1, "tid": 2, "args": {"data": {"requestId": "1", "url": "https://example.com/vendor.js", "priority": "High"}}},
+    {"name": "ResourceReceiveResponse", "cat": "devtools.timeline", "ph": "I", "ts": 1510000, "pid": 1, "tid": 2, "args": {"data": {"requestId": "1", "statusCode": 200, "mimeType": "application/javascript", "encodedDataLength": 348160}}},
+    {"name": "ResourceFinish", "cat": "devtools.timeline", "ph": "I", "ts": 1520000, "pid": 1, "tid": 2, "args": {"data": {"requestId": "1", "encodedDataLength": 348160, "decodedBodyLength": 348160}}},
+    {"name": "EvaluateScript", "cat": "devtools.timeline", "ph": "X", "ts": 1520000, "dur": 2100000, "pid": 1, "tid": 2, "args": {"data": {"url": "https://example.com/vendor.js", "lineNumber": 1}}},
+    {"name": "FunctionCall", "cat": "devtools.timeline", "ph": "X", "ts": 1600000, "dur": 380000, "pid": 1, "tid": 2, "args": {"data": {"functionName": "processData", "scriptId": "42", "url": "https://example.com/app.component.ts", "lineNumber": 142}}},
+    {"name": "Layout", "cat": "devtools.timeline", "ph": "X", "ts": 1700000, "dur": 15000, "pid": 1, "tid": 2, "args": {"beginData": {"dirtyObjects": 120, "totalObjects": 1500}}},
+    {"name": "FunctionCall", "cat": "devtools.timeline", "ph": "X", "ts": 1720000, "dur": 5000, "pid": 1, "tid": 2, "args": {"data": {"functionName": "updateLayout", "scriptId": "43", "url": "https://example.com/layout.service.ts", "lineNumber": 55}}},
+    {"name": "Layout", "cat": "devtools.timeline", "ph": "X", "ts": 1725000, "dur": 12000, "pid": 1, "tid": 2, "args": {"beginData": {"dirtyObjects": 5, "totalObjects": 1500}, "endData": {"root": [0, 0, 1920, 1080]}}},
+    {"name": "firstContentfulPaint", "cat": "blink.user_timing", "ph": "R", "ts": 2800000, "pid": 1, "tid": 2, "args": {}},
+    {"name": "largestContentfulPaint::Candidate", "cat": "loading", "ph": "R", "ts": 5200000, "pid": 1, "tid": 2, "args": {"data": {"size": 52000, "nodeId": 42, "type": "image", "url": "https://example.com/hero.webp"}}},
+    {"name": "thread_name", "cat": "__metadata", "ph": "M", "ts": 0, "pid": 1, "tid": 2, "args": {"name": "CrRendererMain"}}
+  ]
+}
