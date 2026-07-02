@@ -33,7 +33,12 @@ export class ForcedReflowRule implements AnalysisRule {
             title: `Forced reflow triggered by ${functionName}`,
             detail: `${functionName}${fileName ? ` in ${fileName}` : ''} triggers a synchronous layout (${layoutDurMs.toFixed(1)}ms). This happens when JS reads layout properties (offsetHeight, getBoundingClientRect) after modifying styles.`,
             metric: 'INP',
-            fix: `Batch DOM reads before DOM writes. Move the layout property read before any style changes in ${functionName}, or use \`requestAnimationFrame()\` to defer the write.`,
+            fix: `${functionName} triggers forced synchronous layout (${layoutDurMs.toFixed(1)}ms).\n\n` +
+              `Common culprits: offsetHeight, offsetWidth, getBoundingClientRect(), scrollTop, clientHeight\n\n` +
+              `1. Read all layout properties FIRST, then make DOM changes\n` +
+              `2. Use \`requestAnimationFrame()\` to batch writes:\n` +
+              `   requestAnimationFrame(() => { element.style.height = newHeight + 'px'; })\n` +
+              `3. Consider using CSS containment: \`contain: layout\` on the affected element`,
             source: {
               functionName,
               scriptUrl,

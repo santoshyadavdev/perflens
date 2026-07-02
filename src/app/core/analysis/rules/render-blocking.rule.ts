@@ -51,7 +51,10 @@ export class RenderBlockingRule implements AnalysisRule {
         title: `Render-blocking script: ${fileName} (${durMs.toFixed(0)}ms)`,
         detail: `${fileName}${sizeKb ? ` (${sizeKb}KB)` : ''} blocks rendering for ${durMs.toFixed(0)}ms. It is evaluated synchronously before First Contentful Paint.`,
         metric: 'LCP' as const,
-        fix: `Add \`async\` or \`defer\` to the <script> tag for ${fileName}. Consider code-splitting to load only critical code upfront. If it's a third-party script, load it after FCP.`,
+        fix: `${fileName} blocks rendering for ${durMs.toFixed(0)}ms before First Contentful Paint.${sizeKb ? ` File size: ${sizeKb}KB.` : ''}\n\n` +
+          `1. Add \`defer\` attribute: \`<script src="${fileName}" defer>\`\n` +
+          `2. If third-party, load after FCP: \`<script async src="${fileName}">\`\n` +
+          `3. Code-split with dynamic import: \`const module = await import('./${fileName.replace(/\.[^.]+$/, '')}')\``,
         source: { scriptUrl: script.url },
       };
     });

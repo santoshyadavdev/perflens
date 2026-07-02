@@ -30,6 +30,34 @@ export class RuleEngineService {
       allMetrics.push(...result.metrics);
     }
 
+    // Add placeholder metrics for missing CWVs
+    const metricNames = new Set(allMetrics.map(m => m.shortName));
+    const coreMetrics: Array<{ short: string; full: string }> = [
+      { short: 'FCP', full: 'First Contentful Paint' },
+      { short: 'LCP', full: 'Largest Contentful Paint' },
+      { short: 'TBT', full: 'Total Blocking Time' },
+    ];
+    for (const { short, full } of coreMetrics) {
+      if (!metricNames.has(short)) {
+        allMetrics.push({
+          name: full,
+          shortName: short,
+          value: -1,
+          displayValue: 'N/A',
+          unit: 'ms',
+          rating: 'needs-improvement' as const,
+        });
+      }
+    }
+
+    // Sort metrics: FCP, LCP, TBT
+    const metricOrder = ['FCP', 'LCP', 'TBT'];
+    allMetrics.sort((a, b) => {
+      const ai = metricOrder.indexOf(a.shortName);
+      const bi = metricOrder.indexOf(b.shortName);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    });
+
     allActionItems.sort(
       (a, b) => (SEVERITY_ORDER[a.severity] ?? 2) - (SEVERITY_ORDER[b.severity] ?? 2)
     );

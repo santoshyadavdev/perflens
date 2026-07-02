@@ -32,6 +32,7 @@ describe('LongTasksRule', () => {
     const item = result.actionItems.find(a => a.detail.includes('processData'));
     expect(item).toBeDefined();
     expect(item!.detail).toContain('380');
+    expect(item!.detail).toContain('Breakdown');
   });
 
   it('produces TBT metric', () => {

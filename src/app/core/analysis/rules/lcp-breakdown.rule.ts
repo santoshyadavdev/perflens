@@ -77,6 +77,15 @@ export class LcpBreakdownRule implements AnalysisRule {
         metric: 'LCP',
         fix,
       });
+    } else {
+      actionItems.push({
+        id: 'lcp-good',
+        severity: 'info',
+        title: `LCP is good at ${(lcpMs / 1000).toFixed(1)}s`,
+        detail: `Largest Contentful Paint loaded in ${(lcpMs / 1000).toFixed(1)}s, which is under the 2.5s threshold. Well done!`,
+        metric: 'LCP',
+        fix: 'No action needed. To maintain this, ensure the LCP element stays optimized and preloaded.',
+      });
     }
 
     return { actionItems, metrics };

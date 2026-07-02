@@ -49,6 +49,6 @@ describe('ActionItemsComponent', () => {
     expandBtn.click();
     fixture.detectChanges();
     const detail = fixture.nativeElement.querySelector('[data-testid="action-detail"]');
-    expect(detail.textContent).toContain('async');
+    expect(detail.textContent).toContain('How to fix');
   });
 });
