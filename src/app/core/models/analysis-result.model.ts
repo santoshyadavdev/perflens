@@ -1,5 +1,6 @@
 import { ActionItem } from './action-item.model';
 import { MetricScore } from './metric-score.model';
+import { ParsedTrace } from './trace-event.model';
 
 export interface AnalysisResult {
   fileName: string;
@@ -7,4 +8,5 @@ export interface AnalysisResult {
   analyzedAt: Date;
   metrics: MetricScore[];
   actionItems: ActionItem[];
+  parsedTrace: ParsedTrace;
 }

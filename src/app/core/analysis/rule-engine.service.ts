@@ -36,6 +36,8 @@ export class RuleEngineService {
       { short: 'FCP', full: 'First Contentful Paint' },
       { short: 'LCP', full: 'Largest Contentful Paint' },
       { short: 'TBT', full: 'Total Blocking Time' },
+      { short: 'INP', full: 'Interaction to Next Paint' },
+      { short: 'CLS', full: 'Cumulative Layout Shift' },
     ];
     for (const { short, full } of coreMetrics) {
       if (!metricNames.has(short)) {
@@ -50,8 +52,8 @@ export class RuleEngineService {
       }
     }
 
-    // Sort metrics: FCP, LCP, TBT
-    const metricOrder = ['FCP', 'LCP', 'TBT'];
+    // Sort metrics: FCP, LCP, TBT, INP, CLS
+    const metricOrder = ['FCP', 'LCP', 'TBT', 'INP', 'CLS'];
     allMetrics.sort((a, b) => {
       const ai = metricOrder.indexOf(a.shortName);
       const bi = metricOrder.indexOf(b.shortName);
@@ -68,6 +70,7 @@ export class RuleEngineService {
       analyzedAt: new Date(),
       metrics: allMetrics,
       actionItems: allActionItems,
+      parsedTrace: trace,
     };
   }
 }
