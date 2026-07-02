@@ -8,6 +8,12 @@ import { LongTasksRule } from './rules/long-tasks.rule';
 import { LcpBreakdownRule } from './rules/lcp-breakdown.rule';
 import { ForcedReflowRule } from './rules/forced-reflow.rule';
 import { RenderBlockingRule } from './rules/render-blocking.rule';
+import { InpBreakdownRule } from './rules/inp-breakdown.rule';
+import { ClsCulpritsRule } from './rules/cls-culprits.rule';
+import { ThirdPartyImpactRule } from './rules/third-party-impact.rule';
+import { NetworkChainRule } from './rules/network-chain.rule';
+import { ImageDeliveryRule } from './rules/image-delivery.rule';
+import { UnusedJsRule } from './rules/unused-js.rule';
 
 const SEVERITY_ORDER: Record<string, number> = { critical: 0, warning: 1, info: 2 };
 
@@ -18,6 +24,12 @@ export class RuleEngineService {
     new LcpBreakdownRule(),
     new ForcedReflowRule(),
     new RenderBlockingRule(),
+    new InpBreakdownRule(),
+    new ClsCulpritsRule(),
+    new ThirdPartyImpactRule(),
+    new NetworkChainRule(),
+    new ImageDeliveryRule(),
+    new UnusedJsRule(),
   ];
 
   analyze(trace: ParsedTrace, fileName: string, fileSize: number): AnalysisResult {
