@@ -63,10 +63,20 @@ export class PerfTraceParserService {
   }
 
   private extractMetadata(events: TraceEvent[]): TraceMetadata {
-    const timestamps = events.filter(e => e.ts > 0).map(e => e.ts);
+    let traceStartTime = Infinity;
+    let traceEndTime = -Infinity;
+
+    for (const e of events) {
+      if (e.ts > 0) {
+        if (e.ts < traceStartTime) traceStartTime = e.ts;
+        const end = e.ts + (e.dur ?? 0);
+        if (end > traceEndTime) traceEndTime = end;
+      }
+    }
+
     return {
-      traceStartTime: Math.min(...timestamps),
-      traceEndTime: Math.max(...(timestamps.map((ts, i) => ts + (events[i]?.dur ?? 0)))),
+      traceStartTime: traceStartTime === Infinity ? 0 : traceStartTime,
+      traceEndTime: traceEndTime === -Infinity ? 0 : traceEndTime,
     };
   }
 }
