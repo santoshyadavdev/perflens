@@ -71,6 +71,74 @@ describe('ImageDeliveryRule', () => {
     expect(item.fix.toLowerCase()).toMatch(/webp|avif/);
   });
 
+  it('does not flag svg images for raster format conversion', () => {
+    const sizeBytes = 600 * 1024;
+    const events: TraceEvent[] = [
+      sendRequest('req-svg', 'https://example.com/logo.svg'),
+      receiveResponse('req-svg', 'image/svg+xml'),
+      finishRequest('req-svg', sizeBytes),
+    ];
+
+    const result = rule.analyze(makeTrace(events));
+
+    expect(result.actionItems).toHaveLength(0);
+  });
+
+  it('only marks the largest flagged image as LCP and qualifies fetchpriority guidance', () => {
+    const heroBytes = 700 * 1024;
+    const galleryBytes = 120 * 1024;
+    const events: TraceEvent[] = [
+      sendRequest('hero', 'https://example.com/hero.jpg'),
+      receiveResponse('hero', 'image/jpeg'),
+      finishRequest('hero', heroBytes),
+      sendRequest('gallery', 'https://example.com/gallery.jpg'),
+      receiveResponse('gallery', 'image/jpeg'),
+      finishRequest('gallery', galleryBytes),
+    ];
+
+    const result = rule.analyze(makeTrace(events));
+
+    const hero = result.actionItems.find(item => item.title.includes('hero.jpg'));
+    const gallery = result.actionItems.find(item => item.title.includes('gallery.jpg'));
+
+    expect(hero?.metric).toBe('LCP');
+    expect(hero?.fix).toContain('if this is the LCP image');
+    expect(gallery?.metric).toBe('SIZE');
+    expect(gallery?.fix).toContain('if this is the LCP image');
+  });
+
+  it('accumulates ResourceReceivedData chunks when response and finish sizes are zero', () => {
+    const chunkSizes = [60 * 1024, 40 * 1024];
+    const events: TraceEvent[] = [
+      sendRequest('req-4', 'https://example.com/photo.jpg'),
+      receiveResponse('req-4', 'image/jpeg', 0),
+      {
+        name: 'ResourceReceivedData',
+        cat: 'devtools.timeline',
+        ph: 'I',
+        ts: 15,
+        pid: 1,
+        tid: 1,
+        args: { data: { requestId: 'req-4', encodedDataLength: chunkSizes[0] } },
+      },
+      {
+        name: 'ResourceReceivedData',
+        cat: 'devtools.timeline',
+        ph: 'I',
+        ts: 16,
+        pid: 1,
+        tid: 1,
+        args: { data: { requestId: 'req-4', encodedDataLength: chunkSizes[1] } },
+      },
+      finishRequest('req-4', 0),
+    ];
+
+    const result = rule.analyze(makeTrace(events));
+
+    expect(result.actionItems).toHaveLength(1);
+    expect(result.actionItems[0].title).toContain('100KB');
+  });
+
   it('does not flag a small PNG (5KB)', () => {
     const sizeBytes = 5 * 1024; // 5KB — below the 50KB threshold
     const events: TraceEvent[] = [

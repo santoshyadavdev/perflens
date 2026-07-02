@@ -23,6 +23,7 @@ export interface TabDef {
           [attr.aria-controls]="'tab-panel-' + tab.id"
           [attr.tabindex]="activeTab() === tab.id ? 0 : -1"
           (click)="onTabClick(tab.id, tab.disabled)"
+          (keydown)="onKeydown($event, $index)"
         >
           {{ tab.icon }} {{ tab.label }}
         </button>
@@ -39,6 +40,37 @@ export class TabPanelComponent {
     if (!disabled) {
       this.tabChange.emit(tabId);
     }
+  }
+
+  onKeydown(event: KeyboardEvent, index: number): void {
+    const tabs = this.tabs();
+    if (tabs.length === 0) return;
+
+    const enabledIndexes = tabs
+      .map((tab, idx) => ({ tab, idx }))
+      .filter(({ tab }) => !tab.disabled)
+      .map(({ idx }) => idx);
+    const currentEnabledPosition = enabledIndexes.indexOf(index);
+    if (currentEnabledPosition === -1) return;
+
+    let nextIndex: number | null = null;
+
+    if (event.key === 'ArrowRight') {
+      nextIndex = enabledIndexes[(currentEnabledPosition + 1) % enabledIndexes.length];
+    } else if (event.key === 'ArrowLeft') {
+      nextIndex = enabledIndexes[(currentEnabledPosition - 1 + enabledIndexes.length) % enabledIndexes.length];
+    } else if (event.key === 'Home') {
+      nextIndex = enabledIndexes[0];
+    } else if (event.key === 'End') {
+      nextIndex = enabledIndexes[enabledIndexes.length - 1];
+    }
+
+    if (nextIndex == null) return;
+
+    event.preventDefault();
+    const nextTab = tabs[nextIndex];
+    this.tabChange.emit(nextTab.id);
+    document.getElementById(`tab-${nextTab.id}`)?.focus();
   }
 
   tabClasses(tab: TabDef): string {

@@ -114,4 +114,19 @@ describe('InpBreakdownRule', () => {
     expect(item!.detail).toContain('Processing: 100ms');
     expect(item!.detail).toContain('Presentation delay: 150ms');
   });
+
+  it('clamps negative input delay and processing values to zero', () => {
+    const trace = makeParsedTrace({
+      traceEvents: [
+        makeEventTiming(1, 2_000_000, 250, -10_000, -20_000),
+      ],
+    });
+
+    const { actionItems } = rule.analyze(trace);
+    const item = actionItems.find(a => a.metric === 'INP');
+
+    expect(item).toBeDefined();
+    expect(item!.detail).toContain('Input delay: 0ms');
+    expect(item!.detail).toContain('Processing: 0ms');
+  });
 });

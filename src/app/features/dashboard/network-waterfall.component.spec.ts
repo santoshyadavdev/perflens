@@ -105,6 +105,97 @@ describe('buildWaterfall', () => {
     const entries = buildWaterfall(emptyTrace);
     expect(entries).toEqual([]);
   });
+
+  it('clamps negative TTFB values to zero', () => {
+    const entries = buildWaterfall({
+      traceEvents: [
+        {
+          name: 'ResourceSendRequest',
+          cat: 'devtools.timeline',
+          ph: 'I',
+          ts: 1_000,
+          pid: 1,
+          tid: 1,
+          args: { data: { requestId: 'neg-ttfb', url: 'https://example.com/app.js' } },
+        },
+        {
+          name: 'ResourceReceiveResponse',
+          cat: 'devtools.timeline',
+          ph: 'I',
+          ts: 900,
+          pid: 1,
+          tid: 1,
+          args: { data: { requestId: 'neg-ttfb', mimeType: 'application/javascript', statusCode: 200 } },
+        },
+        {
+          name: 'ResourceFinish',
+          cat: 'devtools.timeline',
+          ph: 'I',
+          ts: 1_500,
+          pid: 1,
+          tid: 1,
+          args: { data: { requestId: 'neg-ttfb', encodedDataLength: 256 } },
+        },
+      ],
+      metadata: { traceStartTime: 0, traceEndTime: 2_000 },
+      mainThreadId: 1,
+      navigationStart: 0,
+    });
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0].ttfbMs).toBe(0);
+    expect(entries[0].downloadMs).toBeCloseTo(0.6, 1);
+  });
+
+  it('keeps the first ResourceSendRequest when redirects reuse a request id', () => {
+    const entries = buildWaterfall({
+      traceEvents: [
+        {
+          name: 'ResourceSendRequest',
+          cat: 'devtools.timeline',
+          ph: 'I',
+          ts: 1_000,
+          pid: 1,
+          tid: 1,
+          args: { data: { requestId: 'redirected', url: 'https://example.com/original' } },
+        },
+        {
+          name: 'ResourceSendRequest',
+          cat: 'devtools.timeline',
+          ph: 'I',
+          ts: 2_000,
+          pid: 1,
+          tid: 1,
+          args: { data: { requestId: 'redirected', url: 'https://example.com/redirected' } },
+        },
+        {
+          name: 'ResourceReceiveResponse',
+          cat: 'devtools.timeline',
+          ph: 'I',
+          ts: 3_000,
+          pid: 1,
+          tid: 1,
+          args: { data: { requestId: 'redirected', mimeType: 'text/html', statusCode: 200 } },
+        },
+        {
+          name: 'ResourceFinish',
+          cat: 'devtools.timeline',
+          ph: 'I',
+          ts: 4_000,
+          pid: 1,
+          tid: 1,
+          args: { data: { requestId: 'redirected', encodedDataLength: 512 } },
+        },
+      ],
+      metadata: { traceStartTime: 0, traceEndTime: 5_000 },
+      mainThreadId: 1,
+      navigationStart: 0,
+    });
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0].url).toBe('https://example.com/original');
+    expect(entries[0].startMs).toBe(1);
+  });
 });
 
 describe('getMimeColor', () => {
@@ -146,5 +237,45 @@ describe('NetworkWaterfallComponent', () => {
 
   it('computes total size correctly', () => {
     expect(component.totalSize()).toBe(2048 + 512);
+  });
+
+  it('uses a non-zero maxTime when all entry durations are zero', () => {
+    fixture.componentRef.setInput('trace', {
+      traceEvents: [
+        {
+          name: 'ResourceSendRequest',
+          cat: 'devtools.timeline',
+          ph: 'I',
+          ts: 0,
+          pid: 1,
+          tid: 1,
+          args: { data: { requestId: 'zero', url: 'https://example.com/zero.js' } },
+        },
+        {
+          name: 'ResourceReceiveResponse',
+          cat: 'devtools.timeline',
+          ph: 'I',
+          ts: 0,
+          pid: 1,
+          tid: 1,
+          args: { data: { requestId: 'zero', mimeType: 'application/javascript', statusCode: 200 } },
+        },
+        {
+          name: 'ResourceFinish',
+          cat: 'devtools.timeline',
+          ph: 'I',
+          ts: 0,
+          pid: 1,
+          tid: 1,
+          args: { data: { requestId: 'zero', encodedDataLength: 0 } },
+        },
+      ],
+      metadata: { traceStartTime: 0, traceEndTime: 1 },
+      mainThreadId: 1,
+      navigationStart: 0,
+    });
+    fixture.detectChanges();
+
+    expect(component.maxTime()).toBe(1);
   });
 });

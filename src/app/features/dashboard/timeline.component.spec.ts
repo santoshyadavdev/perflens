@@ -54,4 +54,30 @@ describe('TimelineComponent', () => {
     // RunTask = 100_000µs = 100ms system
     expect(breakdown.system).toBeCloseTo(100, 0);
   });
+
+  it('samples visible entries across the full timeline instead of truncating to the head', () => {
+    const denseTrace: ParsedTrace = {
+      traceEvents: Array.from({ length: 4001 }, (_, index) => ({
+        name: 'FunctionCall',
+        cat: 'devtools.timeline',
+        ph: 'X' as const,
+        ts: index * 1_000,
+        dur: 1_000,
+        pid: 1,
+        tid: 1,
+        args: { data: { index } },
+      })),
+      metadata: { traceStartTime: 0, traceEndTime: 4_001_000 },
+      mainThreadId: 1,
+      navigationStart: 0,
+    };
+
+    fixture.componentRef.setInput('trace', denseTrace);
+    fixture.detectChanges();
+
+    const visible = component.visibleEntries();
+
+    expect(visible.length).toBeLessThanOrEqual(2000);
+    expect(Math.max(...visible.map(entry => entry.startMs))).toBeGreaterThan(3900);
+  });
 });

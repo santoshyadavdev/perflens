@@ -15,9 +15,32 @@ function getHostname(url: string): string | null {
 }
 
 function getRegistrableDomain(hostname: string): string {
+  // Known limitation: this naive split does not handle PSL cases like co.uk.
   const parts = hostname.split('.');
   if (parts.length <= 2) return hostname;
   return parts.slice(-2).join('.');
+}
+
+function sumMergedIntervalsUs(intervals: Array<{ start: number; end: number }>): number {
+  if (intervals.length === 0) return 0;
+
+  const sorted = [...intervals].sort((a, b) => a.start - b.start);
+  let total = 0;
+  let currentStart = sorted[0].start;
+  let currentEnd = sorted[0].end;
+
+  for (const interval of sorted.slice(1)) {
+    if (interval.start <= currentEnd) {
+      currentEnd = Math.max(currentEnd, interval.end);
+      continue;
+    }
+
+    total += currentEnd - currentStart;
+    currentStart = interval.start;
+    currentEnd = interval.end;
+  }
+
+  return total + (currentEnd - currentStart);
 }
 
 export class ThirdPartyImpactRule implements AnalysisRule {
@@ -29,7 +52,7 @@ export class ThirdPartyImpactRule implements AnalysisRule {
       : this.detectOriginFromRequests(trace);
     const pageRegistrable = pageHostname ? getRegistrableDomain(pageHostname) : null;
 
-    const domainTotalsUs = new Map<string, number>();
+    const domainIntervals = new Map<string, Array<{ start: number; end: number }>>();
 
     for (const event of trace.traceEvents) {
       if (event.ph !== 'X' || event.tid !== trace.mainThreadId) continue;
@@ -45,11 +68,17 @@ export class ThirdPartyImpactRule implements AnalysisRule {
       const registrable = getRegistrableDomain(hostname);
       if (pageRegistrable && registrable === pageRegistrable) continue;
 
-      domainTotalsUs.set(registrable, (domainTotalsUs.get(registrable) ?? 0) + (event.dur ?? 0));
+      const durationUs = event.dur ?? 0;
+      if (durationUs <= 0) continue;
+
+      const intervals = domainIntervals.get(registrable) ?? [];
+      intervals.push({ start: event.ts, end: event.ts + durationUs });
+      domainIntervals.set(registrable, intervals);
     }
 
-    const actionItems: ActionItem[] = Array.from(domainTotalsUs.entries())
-      .map(([domain, totalUs]) => ({ domain, totalMs: totalUs / 1000 }))
+    const actionItems: ActionItem[] = Array.from(domainIntervals.entries())
+      .map(([domain, intervals]) => ({ domain, totalUs: sumMergedIntervalsUs(intervals) }))
+      .map(({ domain, totalUs }) => ({ domain, totalMs: totalUs / 1000 }))
       .filter(({ totalMs }) => totalMs > MIN_BLOCKING_MS)
       .sort((a, b) => b.totalMs - a.totalMs)
       .slice(0, TOP_N)

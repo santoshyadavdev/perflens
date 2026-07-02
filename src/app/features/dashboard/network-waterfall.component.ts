@@ -53,7 +53,9 @@ export function buildWaterfall(trace: ParsedTrace): WaterfallEntry[] {
     if (!requestId) continue;
 
     if (event.name === 'ResourceSendRequest' && data.url) {
-      starts.set(requestId, { url: data.url, startTs: event.ts });
+      if (!starts.has(requestId)) {
+        starts.set(requestId, { url: data.url, startTs: event.ts });
+      }
     } else if (event.name === 'ResourceReceiveResponse') {
       responses.set(requestId, {
         mimeType: data.mimeType ?? '',
@@ -76,7 +78,7 @@ export function buildWaterfall(trace: ParsedTrace): WaterfallEntry[] {
     if (!response || !finish) continue;
 
     const startMs = (start.startTs - navStart) / 1000;
-    const ttfbMs = (response.responseTs - start.startTs) / 1000;
+    const ttfbMs = Math.max(0, (response.responseTs - start.startTs) / 1000);
     const downloadMs = Math.max(0, (finish.endTs - response.responseTs) / 1000);
     const totalMs = ttfbMs + downloadMs;
 
@@ -171,7 +173,7 @@ export class NetworkWaterfallComponent {
   maxTime = computed(() => {
     const es = this.entries();
     if (es.length === 0) return 1;
-    return Math.max(...es.map(e => e.startMs + e.totalMs));
+    return Math.max(...es.map(e => e.startMs + e.totalMs), 1);
   });
 
   mimeColor = getMimeColor;

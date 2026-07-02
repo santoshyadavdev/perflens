@@ -87,6 +87,39 @@ describe('ThirdPartyImpactRule', () => {
     expect(item!.title).toContain('250ms');
   });
 
+  it('merges overlapping script intervals from the same third-party domain', () => {
+    const trace = makeTrace({
+      traceEvents: [
+        {
+          name: 'FunctionCall',
+          cat: 'devtools.timeline',
+          ph: 'X',
+          ts: 1_000,
+          dur: 100_000,
+          pid: 1,
+          tid: 1,
+          args: { data: { url: 'https://analytics.com/script.js' } },
+        },
+        {
+          name: 'EvaluateScript',
+          cat: 'devtools.timeline',
+          ph: 'X',
+          ts: 20_000,
+          dur: 40_000,
+          pid: 1,
+          tid: 1,
+          args: { data: { url: 'https://analytics.com/script.js' } },
+        },
+      ],
+    });
+
+    const result = rule.analyze(trace);
+
+    const item = result.actionItems.find(a => a.title.includes('analytics.com'));
+    expect(item).toBeDefined();
+    expect(item!.title).toContain('100ms');
+  });
+
   it('returns no action items when all scripts are first-party', () => {
     const trace = makeTrace({
       traceEvents: [

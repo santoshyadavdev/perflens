@@ -43,6 +43,8 @@ const CATEGORY_COLORS: Record<EventCategory, string> = {
   idle: '#1f2937',
 };
 
+const MAX_ENTRIES = 2000;
+
 @Component({
   selector: 'app-timeline',
   template: `
@@ -114,8 +116,13 @@ export class TimelineComponent {
 
   visibleEntries = computed(() => {
     const totalMs = this.totalDurationMs() || 1;
-    return this.timelineEntries()
-      .slice(0, 2000)
+    const entries = this.timelineEntries();
+    const sampled =
+      entries.length <= MAX_ENTRIES
+        ? entries
+        : entries.filter((_, i) => i % Math.ceil(entries.length / MAX_ENTRIES) === 0);
+
+    return sampled
       .map(entry => ({
         ...entry,
         leftPct: (entry.startMs / totalMs) * 100,

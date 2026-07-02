@@ -31,8 +31,8 @@ function extractInteractionData(event: TraceEvent): InteractionData | null {
     return null;
   }
 
-  const inputDelayMs = Math.round((processingStart - event.ts) / 1000);
-  const processingMs = Math.round((processingEnd - processingStart) / 1000);
+  const inputDelayMs = Math.max(0, Math.round((processingStart - event.ts) / 1000));
+  const processingMs = Math.max(0, Math.round((processingEnd - processingStart) / 1000));
   const presentationDelayMs = Math.max(0, durationMs - inputDelayMs - processingMs);
 
   return { interactionId, type, durationMs, inputDelayMs, processingMs, presentationDelayMs };
