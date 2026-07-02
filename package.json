@@ -8,7 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "vitest",
     "test:run": "vitest run",
-    "serve:ssr:perflens": "node dist/perflens/server/server.mjs"
+    "deploy": "ng build && wrangler pages deploy dist/perflens/browser --project-name=perflens"
   },
   "private": true,
   "packageManager": "npm@11.12.1",
