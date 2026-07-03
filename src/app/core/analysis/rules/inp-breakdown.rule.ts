@@ -31,9 +31,12 @@ function extractInteractionData(event: TraceEvent): InteractionData | null {
     return null;
   }
 
-  const inputDelayMs = Math.max(0, Math.round((processingStart - event.ts) / 1000));
-  const processingMs = Math.max(0, Math.round((processingEnd - processingStart) / 1000));
-  const presentationDelayMs = Math.max(0, durationMs - inputDelayMs - processingMs);
+  const rawInputDelay = Math.round((processingStart - event.ts) / 1000);
+  const rawProcessing = Math.round((processingEnd - processingStart) / 1000);
+  const rawPresentation = durationMs - rawInputDelay - rawProcessing;
+  const inputDelayMs = Math.max(0, rawInputDelay);
+  const processingMs = Math.max(0, rawProcessing);
+  const presentationDelayMs = Math.max(0, rawPresentation);
 
   return { interactionId, type, durationMs, inputDelayMs, processingMs, presentationDelayMs };
 }

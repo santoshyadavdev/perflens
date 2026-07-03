@@ -74,8 +74,8 @@ export class ImageDeliveryRule implements AnalysisRule {
         detail: `${fileName} is ${sizeKb}KB with ${reasons.join(' and ')}. Optimizing images reduces LCP and overall page weight.`,
         metric: isLikelyLcp ? 'LCP' : 'SIZE',
         fix: fixes.join('\n'),
-        source: { imageUrl: url },
-      } as ActionItem);
+        source: { scriptUrl: url },
+      });
     }
 
     return { actionItems, metrics: [] };

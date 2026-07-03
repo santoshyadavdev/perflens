@@ -51,6 +51,7 @@ export class FlamegraphComponent implements OnChanges, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private chart?: ReturnType<typeof flamegraph>;
   private viewReady = false;
+  private renderVersion = 0;
 
   constructor() {
     afterNextRender(() => {
@@ -107,6 +108,8 @@ export class FlamegraphComponent implements OnChanges, OnDestroy {
   }
 
   private renderFlamegraph(): void {
+    const currentVersion = ++this.renderVersion;
+
     if (!isPlatformBrowser(this.platformId) || this.isTestEnvironment()) {
       return;
     }
@@ -115,6 +118,8 @@ export class FlamegraphComponent implements OnChanges, OnDestroy {
     if (!container) {
       return;
     }
+
+    if (currentVersion !== this.renderVersion) return;
 
     this.chart?.destroy();
     this.chart = undefined;

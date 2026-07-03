@@ -44,21 +44,21 @@ export class RuleEngineService {
 
     // Add placeholder metrics for missing CWVs
     const metricNames = new Set(allMetrics.map(m => m.shortName));
-    const coreMetrics: Array<{ short: string; full: string }> = [
-      { short: 'FCP', full: 'First Contentful Paint' },
-      { short: 'LCP', full: 'Largest Contentful Paint' },
-      { short: 'TBT', full: 'Total Blocking Time' },
-      { short: 'INP', full: 'Interaction to Next Paint' },
-      { short: 'CLS', full: 'Cumulative Layout Shift' },
+    const coreMetrics: Array<{ short: string; full: string; unit: string }> = [
+      { short: 'FCP', full: 'First Contentful Paint', unit: 'ms' },
+      { short: 'LCP', full: 'Largest Contentful Paint', unit: 'ms' },
+      { short: 'TBT', full: 'Total Blocking Time', unit: 'ms' },
+      { short: 'INP', full: 'Interaction to Next Paint', unit: 'ms' },
+      { short: 'CLS', full: 'Cumulative Layout Shift', unit: '' },
     ];
-    for (const { short, full } of coreMetrics) {
+    for (const { short, full, unit } of coreMetrics) {
       if (!metricNames.has(short)) {
         allMetrics.push({
           name: full,
           shortName: short,
           value: -1,
           displayValue: 'N/A',
-          unit: 'ms',
+          unit,
           rating: 'needs-improvement' as const,
         });
       }

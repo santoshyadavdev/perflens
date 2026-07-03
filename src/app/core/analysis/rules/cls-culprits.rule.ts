@@ -1,7 +1,7 @@
 import { AnalysisRule, RuleResult } from '../analysis-rule';
 import { ParsedTrace } from '../../models/trace-event.model';
 import { ActionItem, Severity } from '../../models/action-item.model';
-import { MetricScore, rateMetric } from '../../models/metric-score.model';
+import { MetricScore, rateMetric, CWV_THRESHOLDS } from '../../models/metric-score.model';
 
 interface ImpactedNode {
   node_id: number;
@@ -57,6 +57,9 @@ export class ClsCulpritsRule implements AnalysisRule {
       });
     }
 
+    // NOTE: This is a simplified flat sum of all unexpected shifts.
+    // The real CWV CLS metric uses session-window grouping with max-window aggregation.
+    // This approximation overstates CLS for pages with shifts spread across many windows.
     const cls = unexpected.reduce((sum, s) => sum + s.score, 0);
     const metric = this.buildMetric(cls);
     metrics.push(metric);
@@ -77,7 +80,7 @@ export class ClsCulpritsRule implements AnalysisRule {
     for (let i = 0; i < top.length; i++) {
       const shift = top[i];
       const timeMs = ((shift.ts - trace.navigationStart) / 1000).toFixed(0);
-      const severity: Severity = shift.score > 0.1 ? 'critical' : 'warning';
+      const severity: Severity = shift.score > CWV_THRESHOLDS.CLS.good ? 'critical' : 'warning';
       const nodeDesc = shift.nodes.length > 0
         ? shift.nodes.map(n => {
             const dy = n.new_rect[1] - n.old_rect[1];

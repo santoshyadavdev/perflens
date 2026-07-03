@@ -106,10 +106,11 @@ export class NetworkChainRule implements AnalysisRule {
     const severity = durationMs > 2000 ? 'critical' : 'warning';
     const names = chain.map(r => r.url.split('/').pop() ?? r.url);
 
+    const label = severity === 'critical' ? 'Critical' : 'Long';
     return {
       id: `network-chain-${index}`,
       severity,
-      title: `Critical request chain: ${chain.length} requests (${durationMs}ms)`,
+      title: `${label} request chain: ${chain.length} requests (${durationMs}ms)`,
       detail: names.join(' → '),
       metric: 'LCP' as const,
       fix: [
