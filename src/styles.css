@@ -1,3 +1,4 @@
+@import '../node_modules/d3-flame-graph/dist/d3-flamegraph.css';
 @import "tailwindcss";
 @source "../src/**/*.ts";
 @source "../src/**/*.html";

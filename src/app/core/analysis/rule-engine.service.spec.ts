@@ -22,6 +22,20 @@ describe('RuleEngineService', () => {
     expect(result.metrics.length).toBeGreaterThan(0);
   });
 
+  it('returns the parsed trace and includes all core metrics in order', () => {
+    const parsed = parser.parse(sampleTrace);
+    const result = engine.analyze(parsed, 'test-trace.json', 1024);
+
+    expect(result.parsedTrace).toBe(parsed);
+    expect(result.metrics.map(metric => metric.shortName).slice(0, 5)).toEqual([
+      'FCP',
+      'LCP',
+      'TBT',
+      'INP',
+      'CLS',
+    ]);
+  });
+
   it('sorts action items by severity (critical first)', () => {
     const parsed = parser.parse(sampleTrace);
     const result = engine.analyze(parsed, 'test.json', 1024);

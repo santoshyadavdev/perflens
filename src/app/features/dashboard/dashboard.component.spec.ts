@@ -5,6 +5,10 @@ import { TraceStoreService } from '../../core/services/trace-store.service';
 
 describe('DashboardComponent', () => {
   let fixture: ComponentFixture<DashboardComponent>;
+  const getTabButton = (label: string): HTMLButtonElement | undefined =>
+    Array.from(fixture.nativeElement.querySelectorAll('button')).find((button: HTMLButtonElement) =>
+      button.textContent?.includes(label),
+    );
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -44,6 +48,42 @@ describe('DashboardComponent', () => {
   it('renders action items', () => {
     const actionItems = fixture.nativeElement.querySelector('app-action-items');
     expect(actionItems).toBeTruthy();
+  });
+
+  it('renders the dashboard tabs', () => {
+    expect(getTabButton('Action Items')).toBeTruthy();
+    expect(getTabButton('Flamegraph')).toBeTruthy();
+    expect(getTabButton('Timeline')).toBeTruthy();
+    expect(getTabButton('Network')).toBeTruthy();
+  });
+
+  it('wires tabs and panels for accessibility', () => {
+    const actionItemsTab = getTabButton('Action Items');
+    const flamegraphTab = getTabButton('Flamegraph');
+    const actionItemsPanel = fixture.nativeElement.querySelector('#tab-panel-action-items');
+
+    expect(actionItemsTab?.id).toBe('tab-action-items');
+    expect(actionItemsTab?.getAttribute('tabindex')).toBe('0');
+    expect(flamegraphTab?.getAttribute('tabindex')).toBe('-1');
+    expect(actionItemsPanel?.getAttribute('aria-labelledby')).toBe('tab-action-items');
+  });
+
+  it('switches to the flamegraph tab', () => {
+    const flamegraphTab = getTabButton('Flamegraph');
+    const actionItemsTab = getTabButton('Action Items');
+
+    flamegraphTab?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-flamegraph')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-action-items')).toBeFalsy();
+    expect(flamegraphTab?.getAttribute('aria-selected')).toBe('true');
+    expect(actionItemsTab?.getAttribute('aria-selected')).toBe('false');
+  });
+
+  it('keeps future tabs disabled', () => {
+    expect(getTabButton('Memory')?.disabled).toBe(true);
+    expect(getTabButton('V8 Internals')?.disabled).toBe(true);
   });
 
   it('displays the file name', () => {
