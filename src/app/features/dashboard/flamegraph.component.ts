@@ -2,10 +2,11 @@ import { isPlatformBrowser } from '@angular/common';
 import {
   afterNextRender,
   Component,
+  effect,
   ElementRef,
   inject,
+  Injector,
   input,
-  OnChanges,
   OnDestroy,
   PLATFORM_ID,
   viewChild,
@@ -44,29 +45,23 @@ interface TraceEventData {
     </div>
   `,
 })
-export class FlamegraphComponent implements OnChanges, OnDestroy {
+export class FlamegraphComponent implements OnDestroy {
   trace = input.required<ParsedTrace>();
   readonly chartContainer = viewChild<ElementRef<HTMLDivElement>>('chartContainer');
 
   private readonly platformId = inject(PLATFORM_ID);
   private chart?: ReturnType<typeof flamegraph>;
-  private viewReady = false;
   private renderVersion = 0;
 
   constructor() {
+    const injector = inject(Injector);
     afterNextRender(() => {
-      this.viewReady = true;
-      this.renderFlamegraph();
-    });
-  }
-
-  ngOnChanges(): void {
-    if (!this.viewReady) {
-      return;
-    }
-
-    queueMicrotask(() => {
-      this.renderFlamegraph();
+      effect(() => {
+        const trace = this.trace();
+        const container = this.chartContainer()?.nativeElement;
+        if (!container) return;
+        this.renderFlamegraph(trace, container);
+      }, { injector });
     });
   }
 
@@ -107,15 +102,10 @@ export class FlamegraphComponent implements OnChanges, OnDestroy {
     return root;
   }
 
-  private renderFlamegraph(): void {
+  private renderFlamegraph(trace: ParsedTrace, container: HTMLDivElement): void {
     const currentVersion = ++this.renderVersion;
 
     if (!isPlatformBrowser(this.platformId) || this.isTestEnvironment()) {
-      return;
-    }
-
-    const container = this.chartContainer()?.nativeElement;
-    if (!container) {
       return;
     }
 
@@ -126,7 +116,7 @@ export class FlamegraphComponent implements OnChanges, OnDestroy {
     container.oncontextmenu = null;
     container.replaceChildren();
 
-    const hierarchy = this.buildHierarchy(this.trace());
+    const hierarchy = this.buildHierarchy(trace);
     if (hierarchy.children.length === 0) {
       this.renderEmptyState(container, 'No main-thread activity above 0.5ms to visualize.');
       return;
