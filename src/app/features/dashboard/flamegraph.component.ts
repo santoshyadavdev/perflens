@@ -10,6 +10,8 @@ import {
   PLATFORM_ID,
   viewChild,
 } from '@angular/core';
+import flamegraph from 'd3-flame-graph';
+import { select } from 'd3-selection';
 import { ParsedTrace, TraceEvent } from '../../core/models/trace-event.model';
 
 interface FlameNode {
@@ -47,13 +49,13 @@ export class FlamegraphComponent implements OnChanges, OnDestroy {
   readonly chartContainer = viewChild<ElementRef<HTMLDivElement>>('chartContainer');
 
   private readonly platformId = inject(PLATFORM_ID);
-  private chart?: import('d3-flame-graph').FlamegraphChart;
+  private chart?: ReturnType<typeof flamegraph>;
   private viewReady = false;
 
   constructor() {
     afterNextRender(() => {
       this.viewReady = true;
-      void this.renderFlamegraph();
+      this.renderFlamegraph();
     });
   }
 
@@ -63,7 +65,7 @@ export class FlamegraphComponent implements OnChanges, OnDestroy {
     }
 
     queueMicrotask(() => {
-      void this.renderFlamegraph();
+      this.renderFlamegraph();
     });
   }
 
@@ -104,7 +106,7 @@ export class FlamegraphComponent implements OnChanges, OnDestroy {
     return root;
   }
 
-  private async renderFlamegraph(): Promise<void> {
+  private renderFlamegraph(): void {
     if (!isPlatformBrowser(this.platformId) || this.isTestEnvironment()) {
       return;
     }
@@ -126,7 +128,6 @@ export class FlamegraphComponent implements OnChanges, OnDestroy {
     }
 
     try {
-      const [{ flamegraph }, { select }] = await Promise.all([import('d3-flame-graph'), import('d3-selection')]);
       const chart = flamegraph()
         .width(Math.max(container.clientWidth, 800))
         .cellHeight(18)

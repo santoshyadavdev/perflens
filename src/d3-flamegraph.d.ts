@@ -10,7 +10,7 @@ declare module 'd3-flame-graph' {
     destroy(): FlamegraphChart;
   }
 
-  export function flamegraph(): FlamegraphChart;
+  export default function flamegraph(): FlamegraphChart;
 }
 
 declare module 'd3-selection' {
