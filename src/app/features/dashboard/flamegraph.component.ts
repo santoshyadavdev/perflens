@@ -2,12 +2,12 @@ import { isPlatformBrowser } from '@angular/common';
 import {
   afterNextRender,
   Component,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
   Injector,
   input,
-  OnDestroy,
   PLATFORM_ID,
   viewChild,
 } from '@angular/core';
@@ -45,7 +45,7 @@ interface TraceEventData {
     </div>
   `,
 })
-export class FlamegraphComponent implements OnDestroy {
+export class FlamegraphComponent {
   trace = input.required<ParsedTrace>();
   readonly chartContainer = viewChild<ElementRef<HTMLDivElement>>('chartContainer');
 
@@ -55,6 +55,10 @@ export class FlamegraphComponent implements OnDestroy {
 
   constructor() {
     const injector = inject(Injector);
+    const destroyRef = inject(DestroyRef);
+    destroyRef.onDestroy(() => {
+      this.chart?.destroy();
+    });
     afterNextRender(() => {
       effect(() => {
         const trace = this.trace();
@@ -63,10 +67,6 @@ export class FlamegraphComponent implements OnDestroy {
         this.renderFlamegraph(trace, container);
       }, { injector });
     });
-  }
-
-  ngOnDestroy(): void {
-    this.chart?.destroy();
   }
 
   public buildHierarchy(trace: ParsedTrace): FlameNode {

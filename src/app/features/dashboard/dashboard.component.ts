@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { RuleEngineService } from '../../core/analysis/rule-engine.service';
 import { AnalysisResult } from '../../core/models/analysis-result.model';
@@ -117,7 +117,7 @@ import { TimelineComponent } from './timeline.component';
     </div>
   `,
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent {
   private readonly parser = inject(PerfTraceParserService);
   private readonly ruleEngine = inject(RuleEngineService);
   private readonly router = inject(Router);
@@ -136,7 +136,7 @@ export class DashboardComponent implements OnInit {
   error = signal<string | null>(null);
   activeTab = signal('action-items');
 
-  ngOnInit(): void {
+  constructor() {
     if (!this.traceStore.hasFiles()) {
       this.router.navigate(['/']);
       return;
