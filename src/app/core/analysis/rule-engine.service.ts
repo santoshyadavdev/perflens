@@ -21,6 +21,7 @@ import { DuplicateObjectsRule } from './rules/duplicate-objects.rule';
 import { DetachedDomRule } from './rules/detached-dom.rule';
 import { EventListenerLeaksRule } from './rules/event-listener-leaks.rule';
 import { ClosureLeaksRule } from './rules/closure-leaks.rule';
+import { GrowthPatternRule } from './rules/growth-pattern.rule';
 
 const SEVERITY_ORDER: Record<string, number> = { critical: 0, warning: 1, info: 2 };
 
@@ -32,6 +33,7 @@ export class RuleEngineService {
     new DetachedDomRule(),
     new EventListenerLeaksRule(),
     new ClosureLeaksRule(),
+    new GrowthPatternRule(),
   ];
 
   private readonly rules: AnalysisRule[] = [
