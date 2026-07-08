@@ -18,6 +18,7 @@ import { ImageDeliveryRule } from './rules/image-delivery.rule';
 import { UnusedJsRule } from './rules/unused-js.rule';
 import { RetainedSizeRule } from './rules/retained-size.rule';
 import { DuplicateObjectsRule } from './rules/duplicate-objects.rule';
+import { DetachedDomRule } from './rules/detached-dom.rule';
 
 const SEVERITY_ORDER: Record<string, number> = { critical: 0, warning: 1, info: 2 };
 
@@ -26,6 +27,7 @@ export class RuleEngineService {
   private readonly heapRules: HeapAnalysisRule[] = [
     new RetainedSizeRule(),
     new DuplicateObjectsRule(),
+    new DetachedDomRule(),
   ];
 
   private readonly rules: AnalysisRule[] = [
