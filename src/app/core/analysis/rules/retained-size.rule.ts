@@ -26,7 +26,7 @@ export class RetainedSizeRule implements HeapAnalysisRule {
 
     const actionItems: ActionItem[] = topRetainers.map((s, i) => {
       const pct = totalSize > 0 ? ((s.retainedSize / totalSize) * 100).toFixed(1) : '0.0';
-      const isCritical = i === 0 && s.retainedSize > totalSize * 0.3;
+      const isCritical = s.retainedSize > totalSize * 0.3;
       return {
         id: `retained-size-${s.name}-${i}`,
         title: `${s.name} retains ${formatBytes(s.retainedSize)} (${pct}% of heap)`,

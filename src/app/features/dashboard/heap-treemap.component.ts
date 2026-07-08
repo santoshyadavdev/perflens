@@ -1,10 +1,11 @@
 import {
- Component,
- input,
- viewChild,
- ElementRef,
- effect,
- inject,
+  Component,
+  input,
+  signal,
+  viewChild,
+  ElementRef,
+  effect,
+  inject,
   Injector,
   afterNextRender,
   PLATFORM_ID,
@@ -27,9 +28,9 @@ interface LayoutRect {
   template: `
     <div class="relative w-full" style="height: 500px">
       <canvas #treemapCanvas class="w-full h-full cursor-pointer"></canvas>
-      @if (hoveredNode) {
+      @if (hoveredNode(); as node) {
         <div class="absolute top-2 left-2 bg-gray-900/90 text-white text-sm px-3 py-2 rounded pointer-events-none">
-          {{ hoveredNode.name }} — {{ formatBytes(hoveredNode.value) }}
+          {{ node.name }} — {{ formatBytes(node.value) }}
         </div>
       }
     </div>
@@ -39,7 +40,7 @@ export class HeapTreemapComponent {
   readonly treemapData = input.required<TreemapNode>();
   readonly canvasRef = viewChild<ElementRef<HTMLCanvasElement>>('treemapCanvas');
 
-  hoveredNode: TreemapNode | null = null;
+  readonly hoveredNode = signal<TreemapNode | null>(null);
 
   private readonly injector = inject(Injector);
   private readonly platformId = inject(PLATFORM_ID);
@@ -78,11 +79,11 @@ export class HeapTreemapComponent {
               found = r.node;
             }
           }
-          this.hoveredNode = found;
+          this.hoveredNode.set(found);
         });
 
         canvas.addEventListener('mouseleave', () => {
-          this.hoveredNode = null;
+          this.hoveredNode.set(null);
         });
       });
     }

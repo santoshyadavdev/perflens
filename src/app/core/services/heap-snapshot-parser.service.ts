@@ -15,6 +15,12 @@ export class HeapSnapshotParserService {
   private worker: Worker | null = null;
 
   async parse(file: File): Promise<void> {
+    // Terminate any in-flight worker before starting a new parse
+    if (this.worker) {
+      this.worker.terminate();
+      this.worker = null;
+    }
+
     this.status.set('parsing');
     this.progress.set(0);
     this.progressPhase.set('Starting...');

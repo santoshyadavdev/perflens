@@ -35,12 +35,22 @@ export class ClosureLeaksRule implements HeapAnalysisRule {
       return { actionItems: [], metrics };
     }
 
-    const closureNames = new Set(
-      snapshot.graphData.nodes.filter(n => n.type === 'closure').map(n => n.name)
-    );
+    // Build closure summaries directly from nodes with type === 'closure'
+    // to avoid matching non-closure objects that share the same name.
+    const closureNodes = snapshot.graphData.nodes.filter(n => n.type === 'closure');
+    const closureByName = new Map<string, { count: number; retainedSize: number }>();
+    for (const node of closureNodes) {
+      const entry = closureByName.get(node.name);
+      if (entry) {
+        entry.count++;
+        entry.retainedSize += node.retainedSize;
+      } else {
+        closureByName.set(node.name, { count: 1, retainedSize: node.retainedSize });
+      }
+    }
 
-    const closureConstructors = snapshot.constructorSummaries
-      .filter(s => closureNames.has(s.name))
+    const closureConstructors = Array.from(closureByName.entries())
+      .map(([name, { count, retainedSize }]) => ({ name, count, retainedSize }))
       .filter(s => s.retainedSize > WARN_CLOSURE_RETAINED)
       .sort((a, b) => b.retainedSize - a.retainedSize);
 

@@ -23,9 +23,20 @@ export function computeDominatorTree(graph: HeapGraph): void {
   visited[rootOrdinal] = 1;
   stack.push({ ordinal: rootOrdinal, edgeIndex: 0 });
 
+  // Cache filtered (non-weak) edges per node to avoid repeated filtering.
+  const nonWeakEdgesCache = new Map<number, ReturnType<typeof graph.getOutgoingEdges>>();
+  function getNonWeakEdges(ordinal: number) {
+    let cached = nonWeakEdgesCache.get(ordinal);
+    if (!cached) {
+      cached = graph.getOutgoingEdges(ordinal).filter(e => e.type !== 'weak');
+      nonWeakEdgesCache.set(ordinal, cached);
+    }
+    return cached;
+  }
+
   while (stack.length > 0) {
     const frame = stack[stack.length - 1];
-    const edges = graph.getOutgoingEdges(frame.ordinal);
+    const edges = getNonWeakEdges(frame.ordinal);
 
     if (frame.edgeIndex < edges.length) {
       const edge = edges[frame.edgeIndex];
@@ -77,7 +88,7 @@ export function computeDominatorTree(graph: HeapGraph): void {
       }
 
       const ordinal = ordinalOfPostOrder[postIndex];
-      const retainerEdges = graph.getRetainers(ordinal);
+      const retainerEdges = graph.getRetainers(ordinal).filter(e => e.type !== 'weak');
 
       let newIdom = -1;
 
