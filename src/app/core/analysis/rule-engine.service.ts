@@ -19,6 +19,7 @@ import { UnusedJsRule } from './rules/unused-js.rule';
 import { RetainedSizeRule } from './rules/retained-size.rule';
 import { DuplicateObjectsRule } from './rules/duplicate-objects.rule';
 import { DetachedDomRule } from './rules/detached-dom.rule';
+import { EventListenerLeaksRule } from './rules/event-listener-leaks.rule';
 
 const SEVERITY_ORDER: Record<string, number> = { critical: 0, warning: 1, info: 2 };
 
@@ -28,6 +29,7 @@ export class RuleEngineService {
     new RetainedSizeRule(),
     new DuplicateObjectsRule(),
     new DetachedDomRule(),
+    new EventListenerLeaksRule(),
   ];
 
   private readonly rules: AnalysisRule[] = [
