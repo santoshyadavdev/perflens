@@ -1,16 +1,17 @@
 import {
-  Component,
-  input,
-  viewChild,
-  ElementRef,
-  effect,
-  inject,
+ Component,
+ input,
+ viewChild,
+ ElementRef,
+ effect,
+ inject,
   Injector,
   afterNextRender,
   PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import type { TreemapNode } from '../../core/models/heap-snapshot.model';
+import { formatBytes } from '../../core/utils/format';
 
 interface LayoutRect {
   x: number;
@@ -176,9 +177,5 @@ export class HeapTreemapComponent {
     return `rgb(${r}, ${g}, ${b})`;
   }
 
-  formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
+  readonly formatBytes = formatBytes;
 }

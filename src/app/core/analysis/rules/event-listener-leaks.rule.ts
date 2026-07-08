@@ -2,6 +2,7 @@ import type { HeapAnalysisRule, HeapRuleResult } from '../heap-analysis-rule';
 import type { ParsedHeapSnapshot } from '../../models/heap-snapshot.model';
 import type { ActionItem } from '../../models/action-item.model';
 import type { MetricScore } from '../../models/metric-score.model';
+import { formatBytes } from '../../utils/format';
 
 const LISTENER_PATTERNS = ['EventListener', 'MutationObserver', 'ResizeObserver', 'IntersectionObserver'];
 const HIGH_COUNT_THRESHOLD = 50;
@@ -51,8 +52,3 @@ export class EventListenerLeaksRule implements HeapAnalysisRule {
   }
 }
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}

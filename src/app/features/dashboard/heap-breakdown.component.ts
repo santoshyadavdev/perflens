@@ -1,5 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import type { ConstructorSummary } from '../../core/models/heap-snapshot.model';
+import { formatBytes } from '../../core/utils/format';
 
 @Component({
   selector: 'app-heap-breakdown',
@@ -48,11 +49,7 @@ export class HeapBreakdownComponent {
 
   readonly displaySummaries = computed(() => this.summaries().slice(0, 20));
 
-  formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
+  readonly formatBytes = formatBytes;
 
   retainedPercent(retainedSize: number): number {
     const totalSize = this.totalSize();

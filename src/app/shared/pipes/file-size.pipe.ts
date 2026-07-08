@@ -1,10 +1,9 @@
 import { Pipe, PipeTransform } from '@angular/core';
+import { formatBytes } from '../../core/utils/format';
 
 @Pipe({ name: 'fileSize', standalone: true })
 export class FileSizePipe implements PipeTransform {
   transform(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return formatBytes(bytes);
   }
 }

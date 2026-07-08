@@ -1,5 +1,6 @@
 import { Component, input } from '@angular/core';
 import type { DetachedDOMNode } from '../../core/models/heap-snapshot.model';
+import { formatBytes } from '../../core/utils/format';
 
 @Component({
   selector: 'app-detached-dom-list',
@@ -29,9 +30,5 @@ import type { DetachedDOMNode } from '../../core/models/heap-snapshot.model';
 export class DetachedDomListComponent {
   readonly nodes = input.required<DetachedDOMNode[]>();
 
-  formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
+  readonly formatBytes = formatBytes;
 }
