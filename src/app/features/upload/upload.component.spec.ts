@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { UploadComponent } from './upload.component';
+import { TraceStoreService } from '../../core/services/trace-store.service';
 import { provideRouter } from '@angular/router';
 
 describe('UploadComponent', () => {
@@ -37,5 +38,25 @@ describe('UploadComponent', () => {
     const mockFile = new File(['{"traceEvents":[]}'], 'trace.json', { type: 'application/json' });
     component.onFilesSelected([mockFile]);
     expect(component.isProcessing()).toBe(true);
+  });
+
+  it('should store raw File for heap-snapshot format without JSON.parse', async () => {
+    vi.spyOn(component['router'], 'navigate').mockResolvedValue(true);
+
+    const heapContent = JSON.stringify({
+      snapshot: { meta: { node_fields: [] }, node_count: 0, edge_count: 0 },
+      nodes: [], edges: [], strings: [],
+    });
+    const file = new File([heapContent], 'test.heapsnapshot', { type: 'application/json' });
+
+    await component.onFilesSelected([file]);
+
+    const traceStore = TestBed.inject(TraceStoreService);
+    const stored = traceStore.files();
+    expect(stored.length).toBe(1);
+    expect(stored[0].format).toBe('heap-snapshot');
+    // content must be the raw File object, not a parsed object
+    expect(stored[0].content).toBeInstanceOf(File);
+    expect(stored[0].content).toBe(file);
   });
 });
