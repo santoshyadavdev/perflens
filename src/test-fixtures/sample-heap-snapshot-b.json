@@ -1,0 +1,59 @@
+{
+  "snapshot": {
+    "meta": {
+      "node_fields": ["type", "name", "id", "self_size", "edge_count", "detachedness"],
+      "node_types": [["hidden", "array", "string", "object", "code", "closure", "regexp", "number", "native", "synthetic", "concatenated string", "sliced string", "symbol", "bigint", "object shape"]],
+      "edge_fields": ["type", "name_or_index", "to_node"],
+      "edge_types": [["context", "element", "property", "internal", "hidden", "shortcut", "weak"]]
+    },
+    "node_count": 11,
+    "edge_count": 11
+  },
+  "nodes": [
+    9, 0, 1, 0, 5, 0,
+    3, 1, 2, 120, 2, 0,
+    0, 2, 3, 50, 1, 0,
+    3, 3, 4, 200, 1, 0,
+    3, 4, 5, 80, 1, 2,
+    3, 5, 6, 60, 0, 0,
+    5, 6, 7, 150, 1, 0,
+    3, 7, 8, 40, 0, 2,
+    3, 3, 9, 200, 0, 0,
+    3, 3, 10, 200, 0, 0,
+    3, 15, 11, 500, 0, 0
+  ],
+  "edges": [
+    2, 8, 6,
+    2, 9, 12,
+    2, 16, 48,
+    2, 17, 54,
+    2, 18, 60,
+    2, 10, 18,
+    2, 11, 24,
+    2, 12, 30,
+    2, 13, 36,
+    2, 14, 42,
+    2, 12, 30
+  ],
+  "strings": [
+    "(GC roots)",
+    "Window",
+    "(system)",
+    "MyApp",
+    "HTMLDivElement",
+    "EventListener",
+    "closure",
+    "HTMLSpanElement",
+    "app",
+    "system",
+    "myApp",
+    "div",
+    "listener",
+    "fn",
+    "span",
+    "LeakedObject",
+    "myApp2",
+    "myApp3",
+    "leaked"
+  ]
+}
