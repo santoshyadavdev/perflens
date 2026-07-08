@@ -4,6 +4,8 @@ import { AnalysisResult } from '../models/analysis-result.model';
 import { ActionItem } from '../models/action-item.model';
 import { MetricScore } from '../models/metric-score.model';
 import { AnalysisRule } from './analysis-rule';
+import type { HeapAnalysisRule } from './heap-analysis-rule';
+import type { ParsedHeapSnapshot, HeapComparison } from '../models/heap-snapshot.model';
 import { LongTasksRule } from './rules/long-tasks.rule';
 import { LcpBreakdownRule } from './rules/lcp-breakdown.rule';
 import { ForcedReflowRule } from './rules/forced-reflow.rule';
@@ -19,6 +21,8 @@ const SEVERITY_ORDER: Record<string, number> = { critical: 0, warning: 1, info: 
 
 @Injectable({ providedIn: 'root' })
 export class RuleEngineService {
+  private readonly heapRules: HeapAnalysisRule[] = [];
+
   private readonly rules: AnalysisRule[] = [
     new LongTasksRule(),
     new LcpBreakdownRule(),
@@ -84,5 +88,23 @@ export class RuleEngineService {
       actionItems: allActionItems,
       parsedTrace: trace,
     };
+  }
+
+  analyzeHeapSnapshot(
+    snapshot: ParsedHeapSnapshot,
+    comparison?: HeapComparison
+  ): { actionItems: ActionItem[]; metrics: MetricScore[] } {
+    const allItems: ActionItem[] = [];
+    const allMetrics: MetricScore[] = [];
+
+    for (const rule of this.heapRules) {
+      const result = rule.analyze(snapshot, comparison);
+      allItems.push(...result.actionItems);
+      allMetrics.push(...result.metrics);
+    }
+
+    allItems.sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 99) - (SEVERITY_ORDER[b.severity] ?? 99));
+
+    return { actionItems: allItems, metrics: allMetrics };
   }
 }
