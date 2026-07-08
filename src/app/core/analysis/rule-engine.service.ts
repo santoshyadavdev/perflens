@@ -16,12 +16,15 @@ import { ThirdPartyImpactRule } from './rules/third-party-impact.rule';
 import { NetworkChainRule } from './rules/network-chain.rule';
 import { ImageDeliveryRule } from './rules/image-delivery.rule';
 import { UnusedJsRule } from './rules/unused-js.rule';
+import { RetainedSizeRule } from './rules/retained-size.rule';
 
 const SEVERITY_ORDER: Record<string, number> = { critical: 0, warning: 1, info: 2 };
 
 @Injectable({ providedIn: 'root' })
 export class RuleEngineService {
-  private readonly heapRules: HeapAnalysisRule[] = [];
+  private readonly heapRules: HeapAnalysisRule[] = [
+    new RetainedSizeRule(),
+  ];
 
   private readonly rules: AnalysisRule[] = [
     new LongTasksRule(),
