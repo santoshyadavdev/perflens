@@ -136,7 +136,11 @@ export class UploadComponent {
           name: d.name,
           size: d.size,
           format: d.format,
-          content: JSON.parse(await readFileText(d.file)),
+          // Heap snapshots are large — store the raw File so a Web Worker can
+          // parse them off the main thread.  All other formats parse eagerly.
+          content: d.format === 'heap-snapshot'
+            ? d.file
+            : JSON.parse(await readFileText(d.file)),
         }))
       );
       this.traceStore.store(fileData);

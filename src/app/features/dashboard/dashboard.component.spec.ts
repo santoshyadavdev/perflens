@@ -90,3 +90,36 @@ describe('DashboardComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('test-trace.json');
   });
 });
+
+describe('DashboardComponent (heap snapshot)', () => {
+  let fixture: ComponentFixture<DashboardComponent>;
+  const getTabButton = (label: string): HTMLButtonElement | undefined =>
+    Array.from(fixture.nativeElement.querySelectorAll('button')).find((button: HTMLButtonElement) =>
+      button.textContent?.includes(label),
+    );
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [DashboardComponent],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const traceStore = TestBed.inject(TraceStoreService);
+    traceStore.store([{
+      name: 'test-heap.heapsnapshot',
+      size: 2048,
+      format: 'heap-snapshot',
+      content: new File(['{}'], 'test-heap.heapsnapshot'),
+    }]);
+
+    fixture = TestBed.createComponent(DashboardComponent);
+    fixture.detectChanges();
+  });
+
+  it('enables the memory tab and defaults to it', () => {
+    expect(getTabButton('Memory')?.disabled).toBe(false);
+    expect(getTabButton('Flamegraph')?.disabled).toBe(true);
+    expect(getTabButton('Timeline')?.disabled).toBe(true);
+    expect(getTabButton('Network')?.disabled).toBe(true);
+  });
+});
