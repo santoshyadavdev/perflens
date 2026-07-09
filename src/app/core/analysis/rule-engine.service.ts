@@ -24,6 +24,10 @@ import { DetachedDomRule } from './rules/detached-dom.rule';
 import { EventListenerLeaksRule } from './rules/event-listener-leaks.rule';
 import { ClosureLeaksRule } from './rules/closure-leaks.rule';
 import { GrowthPatternRule } from './rules/growth-pattern.rule';
+import { HotFunctionsRule } from './rules/hot-functions.rule';
+import { DeepCallStacksRule } from './rules/deep-call-stacks.rule';
+import { GcPressureRule } from './rules/gc-pressure.rule';
+import { RecursiveCallsRule } from './rules/recursive-calls.rule';
 
 const SEVERITY_ORDER: Record<string, number> = { critical: 0, warning: 1, info: 2 };
 
@@ -123,7 +127,12 @@ export class RuleEngineService {
     return { actionItems: allItems, metrics: allMetrics };
   }
 
-  private readonly cpuRules: CpuAnalysisRule[] = [];
+  private readonly cpuRules: CpuAnalysisRule[] = [
+    new HotFunctionsRule(),
+    new DeepCallStacksRule(),
+    new GcPressureRule(),
+    new RecursiveCallsRule(),
+  ];
 
   analyzeCpuProfile(
     profile: ParsedCpuProfile,
