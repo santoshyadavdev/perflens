@@ -6,6 +6,8 @@ import { MetricScore } from '../models/metric-score.model';
 import { AnalysisRule } from './analysis-rule';
 import type { HeapAnalysisRule } from './heap-analysis-rule';
 import type { ParsedHeapSnapshot, HeapComparison } from '../models/heap-snapshot.model';
+import type { CpuAnalysisRule } from './cpu-analysis-rule';
+import type { ParsedCpuProfile, CpuProfileComparison } from '../models/cpu-profile.model';
 import { LongTasksRule } from './rules/long-tasks.rule';
 import { LcpBreakdownRule } from './rules/lcp-breakdown.rule';
 import { ForcedReflowRule } from './rules/forced-reflow.rule';
@@ -112,6 +114,26 @@ export class RuleEngineService {
 
     for (const rule of this.heapRules) {
       const result = rule.analyze(snapshot, comparison);
+      allItems.push(...result.actionItems);
+      allMetrics.push(...result.metrics);
+    }
+
+    allItems.sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 99) - (SEVERITY_ORDER[b.severity] ?? 99));
+
+    return { actionItems: allItems, metrics: allMetrics };
+  }
+
+  private readonly cpuRules: CpuAnalysisRule[] = [];
+
+  analyzeCpuProfile(
+    profile: ParsedCpuProfile,
+    comparison?: CpuProfileComparison
+  ): { actionItems: ActionItem[]; metrics: MetricScore[] } {
+    const allItems: ActionItem[] = [];
+    const allMetrics: MetricScore[] = [];
+
+    for (const rule of this.cpuRules) {
+      const result = rule.analyze(profile, comparison);
       allItems.push(...result.actionItems);
       allMetrics.push(...result.metrics);
     }
