@@ -12,16 +12,16 @@ type SortField = 'selfTime' | 'totalTime' | 'selfPercent' | 'totalPercent' | 'hi
           <tr>
             <th class="px-4 py-2">Function</th>
             <th class="px-4 py-2">Script</th>
-            <th class="px-4 py-2 text-right cursor-pointer hover:text-gray-300" (click)="toggleSort('selfTime')">
+            <th class="px-4 py-2 text-right cursor-pointer hover:text-gray-300" tabindex="0" role="button" (click)="toggleSort('selfTime')" (keydown.enter)="toggleSort('selfTime')" (keydown.space)="toggleSort('selfTime'); $event.preventDefault()">
               Self Time {{ sortIndicator('selfTime') }}
             </th>
-            <th class="px-4 py-2 text-right cursor-pointer hover:text-gray-300" (click)="toggleSort('totalTime')">
+            <th class="px-4 py-2 text-right cursor-pointer hover:text-gray-300" tabindex="0" role="button" (click)="toggleSort('totalTime')" (keydown.enter)="toggleSort('totalTime')" (keydown.space)="toggleSort('totalTime'); $event.preventDefault()">
               Total Time {{ sortIndicator('totalTime') }}
             </th>
-            <th class="px-4 py-2 w-36 cursor-pointer hover:text-gray-300" (click)="toggleSort('selfPercent')">
+            <th class="px-4 py-2 w-36 cursor-pointer hover:text-gray-300" tabindex="0" role="button" (click)="toggleSort('selfPercent')" (keydown.enter)="toggleSort('selfPercent')" (keydown.space)="toggleSort('selfPercent'); $event.preventDefault()">
               Self % {{ sortIndicator('selfPercent') }}
             </th>
-            <th class="px-4 py-2 text-right cursor-pointer hover:text-gray-300" (click)="toggleSort('hitCount')">
+            <th class="px-4 py-2 text-right cursor-pointer hover:text-gray-300" tabindex="0" role="button" (click)="toggleSort('hitCount')" (keydown.enter)="toggleSort('hitCount')" (keydown.space)="toggleSort('hitCount'); $event.preventDefault()">
               Hits {{ sortIndicator('hitCount') }}
             </th>
             @if (comparison()) {

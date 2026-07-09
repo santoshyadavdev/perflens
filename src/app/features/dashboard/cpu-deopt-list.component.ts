@@ -9,7 +9,7 @@ import type { DeoptEvent } from '../../core/models/cpu-profile.model';
     } @else {
       <div class="space-y-2">
         <p class="text-sm text-gray-400">{{ deoptEvents().length }} deoptimization(s) found</p>
-        @for (deopt of deoptEvents(); track deopt.callFrame.functionName + deopt.reason) {
+        @for (deopt of deoptEvents(); track deopt.callFrame.functionName + deopt.callFrame.url + deopt.callFrame.lineNumber + deopt.reason) {
           <div class="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
             <div class="flex justify-between items-start">
               <span class="font-mono text-amber-400">{{ deopt.callFrame.functionName || '(anonymous)' }}</span>

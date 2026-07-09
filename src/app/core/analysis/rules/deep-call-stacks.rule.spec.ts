@@ -16,7 +16,7 @@ describe('DeepCallStacksRule', () => {
     expect(metric).toBeDefined();
     expect(metric!.value).toBeGreaterThan(0);
   });
-  it('should detect deep stacks when depth > 30', () => {
+  it('should rate shallow stacks as good when depth <= 30', () => {
     const profile = buildCallTree(sampleProfile as CpuProfileRaw, 'test.cpuprofile');
     const result = rule.analyze(profile);
     expect(result.metrics[0].rating).toBe('good');

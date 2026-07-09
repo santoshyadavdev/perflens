@@ -11,11 +11,16 @@ export class CpuProfileParserService {
   readonly error = signal<string | null>(null);
 
   private worker: Worker | null = null;
+  private pendingReject: ((reason: Error) => void) | null = null;
 
   async parse(file: File): Promise<void> {
     if (this.worker) {
       this.worker.terminate();
       this.worker = null;
+    }
+    if (this.pendingReject) {
+      this.pendingReject(new Error('Parse cancelled by new request'));
+      this.pendingReject = null;
     }
 
     this.status.set('parsing');
@@ -37,7 +42,8 @@ export class CpuProfileParserService {
   }
 
   private parseWithWorker(file: File): Promise<void> {
-    return new Promise<void>((resolve) => {
+    return new Promise<void>((resolve, reject) => {
+      this.pendingReject = reject;
       this.worker!.onmessage = (event: MessageEvent<CpuWorkerMessage>) => {
         const msg = event.data;
         switch (msg.type) {
@@ -50,12 +56,14 @@ export class CpuProfileParserService {
             this.status.set('done');
             this.progress.set(100);
             this.worker?.terminate();
+            this.pendingReject = null;
             resolve();
             break;
           case 'error':
             this.error.set(msg.message);
             this.status.set('error');
             this.worker?.terminate();
+            this.pendingReject = null;
             resolve();
             break;
         }
@@ -64,6 +72,7 @@ export class CpuProfileParserService {
       this.worker!.onerror = (err) => {
         this.error.set(err.message || 'Worker error');
         this.status.set('error');
+        this.pendingReject = null;
         resolve();
       };
 
@@ -97,6 +106,10 @@ export class CpuProfileParserService {
   reset(): void {
     this.worker?.terminate();
     this.worker = null;
+    if (this.pendingReject) {
+      this.pendingReject(new Error('Parse cancelled by reset'));
+      this.pendingReject = null;
+    }
     this.status.set('idle');
     this.progress.set(0);
     this.progressPhase.set('');

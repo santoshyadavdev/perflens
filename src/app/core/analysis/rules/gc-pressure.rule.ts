@@ -1,7 +1,7 @@
 import type { CpuAnalysisRule, CpuRuleResult } from '../cpu-analysis-rule';
 import type { ParsedCpuProfile } from '../../models/cpu-profile.model';
 
-const GC_NAMES = ['(garbage collector)', 'MinorGC', 'MajorGC', 'Scavenge', 'GC'];
+const GC_NAMES_EXACT = new Set(['(garbage collector)', 'MinorGC', 'MajorGC', 'Scavenge', 'GC']);
 const WARNING_THRESHOLD = 5;
 const CRITICAL_THRESHOLD = 15;
 
@@ -10,7 +10,7 @@ export class GcPressureRule implements CpuAnalysisRule {
 
   analyze(profile: ParsedCpuProfile): CpuRuleResult {
     const gcEntries = profile.flatProfile.filter(
-      e => GC_NAMES.some(gc => e.callFrame.functionName.includes(gc))
+      e => GC_NAMES_EXACT.has(e.callFrame.functionName)
     );
 
     const gcTime = gcEntries.reduce((sum, e) => sum + e.selfTime, 0);

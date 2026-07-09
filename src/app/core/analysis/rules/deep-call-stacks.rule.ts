@@ -11,17 +11,17 @@ export class DeepCallStacksRule implements CpuAnalysisRule {
     let maxDepth = 0;
     let deepestFrame = '';
 
-    function walk(node: CallTreeNode): void {
+    const stack: CallTreeNode[] = [profile.root];
+    while (stack.length > 0) {
+      const node = stack.pop()!;
       if (node.depth > maxDepth) {
         maxDepth = node.depth;
         deepestFrame = node.callFrame.functionName;
       }
-      for (const child of node.children) {
-        walk(child);
+      for (let i = node.children.length - 1; i >= 0; i--) {
+        stack.push(node.children[i]);
       }
     }
-
-    walk(profile.root);
 
     const actionItems = maxDepth > WARNING_DEPTH ? [{
       id: `deep-stack-${maxDepth}`,

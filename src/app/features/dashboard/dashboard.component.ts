@@ -9,7 +9,8 @@ import { HeapSnapshotParserService } from '../../core/services/heap-snapshot-par
 import { TraceStoreService } from '../../core/services/trace-store.service';
 import { CpuProfileParserService } from '../../core/services/cpu-profile-parser.service';
 import { ParsedCpuProfile, CpuProfileComparison } from '../../core/models/cpu-profile.model';
-import { compareCpuProfiles } from '../../core/parsers/cpu-profile-parser';
+import { buildCallTree, compareCpuProfiles } from '../../core/parsers/cpu-profile-parser';
+import type { CpuProfileRaw } from '../../core/models/cpu-profile.model';
 import { ActionItemsComponent } from './action-items.component';
 import { DetachedDomListComponent } from './detached-dom-list.component';
 import { FlamegraphComponent } from './flamegraph.component';
@@ -342,7 +343,19 @@ export class DashboardComponent {
 
         let comparison: CpuProfileComparison | undefined;
         if (files.length === 2 && files[1].format === 'cpu-profile') {
-          // Second profile will be handled after the first completes
+          const baselineFile = files[1].content as File;
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const raw = JSON.parse(reader.result as string) as CpuProfileRaw;
+              const baseline = buildCallTree(raw, baselineFile.name);
+              comparison = compareCpuProfiles(baseline, profile);
+              this.cpuComparison.set(comparison);
+            } catch (e) {
+              console.error('Failed to parse baseline CPU profile:', e);
+            }
+          };
+          reader.readAsText(baselineFile);
         }
 
         const { actionItems, metrics } = this.ruleEngine.analyzeCpuProfile(profile, comparison);

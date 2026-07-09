@@ -32,7 +32,9 @@ export class HotFunctionsRule implements CpuAnalysisRule {
     if (comparison) {
       for (const diff of comparison.changed) {
         if (diff.selfTimeDelta > 0) {
-          const deltaPercent = (diff.selfTimeDelta / comparison.baseline.totalTime) * 100;
+          const deltaPercent = comparison.baseline.totalTime > 0
+            ? (diff.selfTimeDelta / comparison.baseline.totalTime) * 100
+            : 0;
           if (deltaPercent > 2) {
             actionItems.push({
               id: `hot-fn-regression-${diff.callFrame.functionName}`,

@@ -26,10 +26,10 @@ export class ModuleAggregationRule implements CpuAnalysisRule {
 
     const actionItems: ActionItem[] = modules
       .filter(m => m.percent > HOT_MODULE_THRESHOLD)
-      .map(m => {
+      .map((m, i) => {
         const basename = m.url.split('/').pop() || m.url;
         return {
-          id: `hot-module-${basename}`,
+          id: `hot-module-${i}-${basename}`,
           title: `${basename} consumes ${m.percent.toFixed(1)}% of CPU time`,
           detail: `Script "${m.url}" accounts for ${m.selfTime.toFixed(1)}ms (${m.percent.toFixed(1)}%) of CPU self time.`,
           severity: 'warning' as const,
@@ -52,7 +52,7 @@ export class ModuleAggregationRule implements CpuAnalysisRule {
         if (delta > 0 && (delta / profile.totalTime) * 100 > 5) {
           const basename = mod.url.split('/').pop() || mod.url;
           actionItems.push({
-            id: `module-regression-${basename}`,
+            id: `module-regression-${mod.url}`,
             title: `${basename} regressed by ${delta.toFixed(1)}ms`,
             detail: `Module time increased from ${baseTime.toFixed(1)}ms to ${mod.selfTime.toFixed(1)}ms.`,
             severity: 'warning',

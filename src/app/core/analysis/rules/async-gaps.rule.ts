@@ -12,12 +12,13 @@ export class AsyncGapsRule implements CpuAnalysisRule {
     let maxGapIndex = 0;
     const largeGaps: Array<{ index: number; delta: number; timestamp: number }> = [];
 
-    for (const sample of profile.samples) {
+    for (let i = 0; i < profile.samples.length; i++) {
+      const sample = profile.samples[i];
       if (sample.delta > WARNING_GAP_MS) {
-        largeGaps.push({ index: profile.samples.indexOf(sample), delta: sample.delta, timestamp: sample.timestamp });
+        largeGaps.push({ index: i, delta: sample.delta, timestamp: sample.timestamp });
         if (sample.delta > maxGap) {
           maxGap = sample.delta;
-          maxGapIndex = profile.samples.indexOf(sample);
+          maxGapIndex = i;
         }
       }
     }

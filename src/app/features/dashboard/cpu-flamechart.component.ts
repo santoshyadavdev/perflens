@@ -105,8 +105,8 @@ export class CpuFlamechartComponent {
 
         canvas.addEventListener('mousemove', (e: MouseEvent) => {
           const rect = canvas.getBoundingClientRect();
-          const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-          const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
 
           let found: CallTreeNode | null = null;
           for (const r of this.rects) {
