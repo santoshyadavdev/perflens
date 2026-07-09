@@ -8,7 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "vitest",
     "test:run": "vitest run",
-    "deploy": "ng build && wrangler pages deploy dist/perflens/browser --project-name=perflens"
+    "deploy": "ng build && wrangler deploy"
   },
   "private": true,
   "packageManager": "npm@11.12.1",
