@@ -138,7 +138,7 @@ export class UploadComponent {
           format: d.format,
           // Heap snapshots are large — store the raw File so a Web Worker can
           // parse them off the main thread.  All other formats parse eagerly.
-          content: d.format === 'heap-snapshot'
+          content: (d.format === 'heap-snapshot' || d.format === 'cpu-profile')
             ? d.file
             : JSON.parse(await readFileText(d.file)),
         }))

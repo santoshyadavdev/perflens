@@ -123,3 +123,40 @@ describe('DashboardComponent (heap snapshot)', () => {
     expect(getTabButton('Network')?.disabled).toBe(true);
   });
 });
+
+describe('DashboardComponent (cpu profile)', () => {
+  let fixture: ComponentFixture<DashboardComponent>;
+  const getTabButton = (label: string): HTMLButtonElement | undefined =>
+    Array.from(fixture.nativeElement.querySelectorAll('button')).find((button: HTMLButtonElement) =>
+      button.textContent?.includes(label),
+    );
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [DashboardComponent],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const traceStore = TestBed.inject(TraceStoreService);
+    traceStore.store([{
+      name: 'test-profile.cpuprofile',
+      size: 4096,
+      format: 'cpu-profile',
+      content: new File(['{}'], 'test-profile.cpuprofile'),
+    }]);
+
+    fixture = TestBed.createComponent(DashboardComponent);
+    fixture.detectChanges();
+  });
+
+  it('enables cpu profile tabs and defaults to cpu profile', () => {
+    expect(getTabButton('Action Items')?.disabled).toBe(false);
+    expect(getTabButton('CPU Profile')?.disabled).toBe(false);
+    expect(getTabButton('Flamegraph')?.disabled).toBe(true);
+    expect(getTabButton('Timeline')?.disabled).toBe(true);
+    expect(getTabButton('Network')?.disabled).toBe(true);
+    expect(getTabButton('Memory')?.disabled).toBe(true);
+    expect(getTabButton('V8 Internals')?.disabled).toBe(true);
+    expect(fixture.componentInstance.activeTab()).toBe('cpu-profile');
+  });
+});
