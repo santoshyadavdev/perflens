@@ -1,6 +1,6 @@
 export type Severity = 'critical' | 'warning' | 'info';
 
-export type MetricTag = 'LCP' | 'INP' | 'CLS' | 'TBT' | 'FCP' | 'SIZE' | 'MEMORY' | 'V8';
+export type MetricTag = 'LCP' | 'INP' | 'CLS' | 'TBT' | 'FCP' | 'SIZE' | 'MEMORY' | 'V8' | 'CPU';
 
 export interface ActionItem {
   id: string;

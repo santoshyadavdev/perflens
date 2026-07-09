@@ -1,0 +1,68 @@
+{
+  "nodes": [
+    {
+      "id": 1,
+      "callFrame": { "functionName": "(root)", "scriptId": "0", "url": "", "lineNumber": -1, "columnNumber": -1 },
+      "hitCount": 0,
+      "children": [2, 3, 8, 13]
+    },
+    {
+      "id": 2,
+      "callFrame": { "functionName": "(idle)", "scriptId": "0", "url": "", "lineNumber": -1, "columnNumber": -1 },
+      "hitCount": 20,
+      "children": []
+    },
+    {
+      "id": 3,
+      "callFrame": { "functionName": "processData", "scriptId": "10", "url": "https://example.com/app.js", "lineNumber": 42, "columnNumber": 0 },
+      "hitCount": 35,
+      "children": [4, 5, 7]
+    },
+    {
+      "id": 4,
+      "callFrame": { "functionName": "transformItem", "scriptId": "10", "url": "https://example.com/app.js", "lineNumber": 100, "columnNumber": 0 },
+      "hitCount": 20,
+      "children": [6]
+    },
+    {
+      "id": 5,
+      "callFrame": { "functionName": "validateInput", "scriptId": "20", "url": "https://example.com/validation.js", "lineNumber": 10, "columnNumber": 0 },
+      "hitCount": 5,
+      "children": []
+    },
+    {
+      "id": 6,
+      "callFrame": { "functionName": "processData", "scriptId": "10", "url": "https://example.com/app.js", "lineNumber": 42, "columnNumber": 0 },
+      "hitCount": 10,
+      "children": []
+    },
+    {
+      "id": 7,
+      "callFrame": { "functionName": "(garbage collector)", "scriptId": "0", "url": "", "lineNumber": -1, "columnNumber": -1 },
+      "hitCount": 5,
+      "children": []
+    },
+    {
+      "id": 8,
+      "callFrame": { "functionName": "render", "scriptId": "30", "url": "https://example.com/ui.js", "lineNumber": 5, "columnNumber": 0 },
+      "hitCount": 3,
+      "children": [9]
+    },
+    {
+      "id": 9,
+      "callFrame": { "functionName": "layout", "scriptId": "30", "url": "https://example.com/ui.js", "lineNumber": 50, "columnNumber": 0 },
+      "hitCount": 2,
+      "children": []
+    },
+    {
+      "id": 13,
+      "callFrame": { "functionName": "newFeature", "scriptId": "40", "url": "https://example.com/new.js", "lineNumber": 1, "columnNumber": 0 },
+      "hitCount": 5,
+      "children": []
+    }
+  ],
+  "startTime": 0,
+  "endTime": 105000,
+  "samples": [2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 6, 6, 6, 5, 5, 7, 7, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 6, 6, 5, 7, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 6, 6, 6, 6, 5, 5, 7, 7, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 6, 5, 7, 2, 2, 2, 2, 8, 8, 8, 9, 9, 2, 2, 13, 13, 13, 13, 13, 3, 3, 3, 3, 4, 4, 6, 5, 7, 2, 2, 2, 2, 2, 2],
+  "timeDeltas": [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000]
+}

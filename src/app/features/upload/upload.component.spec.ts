@@ -59,4 +59,26 @@ describe('UploadComponent', () => {
     expect(stored[0].content).toBeInstanceOf(File);
     expect(stored[0].content).toBe(file);
   });
+
+  it('should store raw File for cpu-profile format without JSON.parse', async () => {
+    vi.spyOn(component['router'], 'navigate').mockResolvedValue(true);
+
+    const cpuProfileContent = JSON.stringify({
+      nodes: [],
+      startTime: 0,
+      endTime: 1,
+      samples: [],
+      timeDeltas: [],
+    });
+    const file = new File([cpuProfileContent], 'test.cpuprofile', { type: 'application/json' });
+
+    await component.onFilesSelected([file]);
+
+    const traceStore = TestBed.inject(TraceStoreService);
+    const stored = traceStore.files();
+    expect(stored.length).toBe(1);
+    expect(stored[0].format).toBe('cpu-profile');
+    expect(stored[0].content).toBeInstanceOf(File);
+    expect(stored[0].content).toBe(file);
+  });
 });

@@ -7,6 +7,10 @@ import { ParsedTrace } from '../../core/models/trace-event.model';
 import { PerfTraceParserService } from '../../core/parsers/perf-trace-parser.service';
 import { HeapSnapshotParserService } from '../../core/services/heap-snapshot-parser.service';
 import { TraceStoreService } from '../../core/services/trace-store.service';
+import { CpuProfileParserService } from '../../core/services/cpu-profile-parser.service';
+import { ParsedCpuProfile, CpuProfileComparison } from '../../core/models/cpu-profile.model';
+import { buildCallTree, compareCpuProfiles } from '../../core/parsers/cpu-profile-parser';
+import type { CpuProfileRaw } from '../../core/models/cpu-profile.model';
 import { ActionItemsComponent } from './action-items.component';
 import { DetachedDomListComponent } from './detached-dom-list.component';
 import { FlamegraphComponent } from './flamegraph.component';
@@ -16,6 +20,9 @@ import { NetworkWaterfallComponent } from './network-waterfall.component';
 import { ScoreCardsComponent } from './score-cards.component';
 import { TabDef, TabPanelComponent } from './tab-panel.component';
 import { TimelineComponent } from './timeline.component';
+import { CpuFlamechartComponent } from './cpu-flamechart.component';
+import { CpuHotFunctionsComponent } from './cpu-hot-functions.component';
+import { CpuDeoptListComponent } from './cpu-deopt-list.component';
 
 const EMPTY_PARSED_TRACE: ParsedTrace = {
   traceEvents: [],
@@ -39,6 +46,9 @@ const EMPTY_PARSED_TRACE: ParsedTrace = {
     HeapTreemapComponent,
     HeapBreakdownComponent,
     DetachedDomListComponent,
+    CpuFlamechartComponent,
+    CpuHotFunctionsComponent,
+    CpuDeoptListComponent,
   ],
   template: `
     <div class="min-h-screen">
@@ -149,11 +159,53 @@ const EMPTY_PARSED_TRACE: ParsedTrace = {
           </div>
 
           <div
+            id="tab-panel-cpu-profile"
+            role="tabpanel"
+            aria-labelledby="tab-cpu-profile"
+            [hidden]="activeTab() !== 'cpu-profile'"
+          >
+            @if (activeTab() === 'cpu-profile') {
+              @if (cpuParser.status() === 'parsing') {
+                <div class="flex flex-col items-center justify-center py-12">
+                  <div class="text-lg text-gray-300 mb-2">{{ cpuParser.progressPhase() }}</div>
+                  <div class="w-64 bg-gray-700 rounded-full h-3">
+                    <div
+                      class="bg-emerald-500 h-3 rounded-full transition-all"
+                      [style.width.%]="cpuParser.progress()"
+                    ></div>
+                  </div>
+                  <div class="text-sm text-gray-400 mt-2">{{ cpuParser.progress() }}%</div>
+                </div>
+              } @else if (cpuParser.status() === 'error') {
+                <div class="text-red-400 py-4">{{ cpuParser.error() }}</div>
+              } @else if (cpuProfile()) {
+                <div class="space-y-6">
+                  <h3 class="text-lg font-semibold text-gray-200">Flame Chart</h3>
+                  <app-cpu-flamechart [profile]="cpuProfile()!" />
+
+                  <h3 class="text-lg font-semibold text-gray-200">Hot Functions</h3>
+                  <app-cpu-hot-functions
+                    [entries]="cpuProfile()!.flatProfile"
+                    [comparison]="cpuComparison() ?? undefined"
+                  />
+                </div>
+              }
+            }
+          </div>
+
+          <div
             id="tab-panel-v8-internals"
             role="tabpanel"
             aria-labelledby="tab-v8-internals"
-            hidden
-          ></div>
+            [hidden]="activeTab() !== 'v8-internals'"
+          >
+            @if (activeTab() === 'v8-internals' && cpuProfile()) {
+              <div class="space-y-6">
+                <h3 class="text-lg font-semibold text-gray-200">V8 Deoptimizations</h3>
+                <app-cpu-deopt-list [deoptEvents]="cpuProfile()!.deoptEvents" />
+              </div>
+            }
+          </div>
         </div>
       } @else if (error()) {
         <div class="flex items-center justify-center min-h-[60vh]">
@@ -173,21 +225,25 @@ export class DashboardComponent {
   private readonly router = inject(Router);
   private readonly traceStore = inject(TraceStoreService);
   readonly heapParser = inject(HeapSnapshotParserService);
+  readonly cpuParser = inject(CpuProfileParserService);
 
-  private readonly fileFormat = signal<'perf-trace' | 'heap-snapshot' | null>(null);
+  private readonly fileFormat = signal<'perf-trace' | 'heap-snapshot' | 'cpu-profile' | null>(null);
 
   readonly dashboardTabs = computed<TabDef[]>(() => {
     const format = this.fileFormat();
     const isHeapSnapshot = format === 'heap-snapshot';
     const isPerfTrace = format === 'perf-trace';
+    const isCpuProfile = format === 'cpu-profile';
+    const hasDeoptEvents = (this.cpuProfile()?.deoptEvents.length ?? 0) > 0;
 
     return [
-      { id: 'action-items', label: 'Action Items', icon: '🎯', disabled: !isHeapSnapshot && !isPerfTrace },
+      { id: 'action-items', label: 'Action Items', icon: '🎯', disabled: !isHeapSnapshot && !isPerfTrace && !isCpuProfile },
       { id: 'flamegraph', label: 'Flamegraph', icon: '🔥', disabled: !isPerfTrace },
       { id: 'timeline', label: 'Timeline', icon: '📊', disabled: !isPerfTrace },
       { id: 'network', label: 'Network', icon: '🌊', disabled: !isPerfTrace },
       { id: 'memory', label: 'Memory', icon: '🧠', disabled: !isHeapSnapshot },
-      { id: 'v8-internals', label: 'V8 Internals', icon: '⚙️', disabled: true },
+      { id: 'cpu-profile', label: 'CPU Profile', icon: '⚡', disabled: !isCpuProfile },
+      { id: 'v8-internals', label: 'V8 Internals', icon: '⚙️', disabled: !isCpuProfile || !hasDeoptEvents },
     ];
   });
 
@@ -195,6 +251,8 @@ export class DashboardComponent {
   error = signal<string | null>(null);
   activeTab = signal('action-items');
   heapSnapshot = signal<ParsedHeapSnapshot | null>(null);
+  cpuProfile = signal<ParsedCpuProfile | null>(null);
+  cpuComparison = signal<CpuProfileComparison | null>(null);
 
   constructor() {
     if (!this.traceStore.hasFiles()) {
@@ -228,8 +286,6 @@ export class DashboardComponent {
       this.fileFormat.set('heap-snapshot');
       this.activeTab.set('memory');
 
-      // Set a placeholder result immediately so the tab panel (and the memory
-      // tab's parsing/progress UI) render while the snapshot parses in the background.
       this.result.set({
         fileName: file.name,
         fileSize: file.size,
@@ -266,7 +322,63 @@ export class DashboardComponent {
       return;
     }
 
-    this.error.set(`${file.format} format is not yet supported. Only performance traces (.json) and heap snapshots (.heapsnapshot) are supported.`);
+    if (file.format === 'cpu-profile') {
+      this.fileFormat.set('cpu-profile');
+      this.activeTab.set('cpu-profile');
+
+      this.result.set({
+        fileName: file.name,
+        fileSize: file.size,
+        analyzedAt: new Date(),
+        metrics: [],
+        actionItems: [],
+        parsedTrace: EMPTY_PARSED_TRACE,
+      });
+
+      effect(() => {
+        const profile = this.cpuParser.result();
+        if (!profile) return;
+
+        this.cpuProfile.set(profile);
+
+        let comparison: CpuProfileComparison | undefined;
+        if (files.length === 2 && files[1].format === 'cpu-profile') {
+          const baselineFile = files[1].content as File;
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const raw = JSON.parse(reader.result as string) as CpuProfileRaw;
+              const baseline = buildCallTree(raw, baselineFile.name);
+              comparison = compareCpuProfiles(baseline, profile);
+              this.cpuComparison.set(comparison);
+            } catch (e) {
+              console.error('Failed to parse baseline CPU profile:', e);
+            }
+          };
+          reader.readAsText(baselineFile);
+        }
+
+        const { actionItems, metrics } = this.ruleEngine.analyzeCpuProfile(profile, comparison);
+
+        this.result.set({
+          fileName: file.name,
+          fileSize: file.size,
+          analyzedAt: new Date(),
+          metrics,
+          actionItems,
+          parsedTrace: EMPTY_PARSED_TRACE,
+          cpuResult: { profile, comparison },
+        });
+      });
+
+      this.cpuParser.parse(file.content as File).catch((e) => {
+        console.error('Failed to parse CPU profile:', e);
+        this.error.set('Failed to parse CPU profile. The file may be corrupted or in an unsupported format.');
+      });
+      return;
+    }
+
+    this.error.set(`${file.format} format is not yet supported. Only performance traces (.json), heap snapshots (.heapsnapshot), and CPU profiles (.cpuprofile) are supported.`);
   }
 
   setActiveTab(tabId: string): void {
