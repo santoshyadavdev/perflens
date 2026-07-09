@@ -28,6 +28,10 @@ import { HotFunctionsRule } from './rules/hot-functions.rule';
 import { DeepCallStacksRule } from './rules/deep-call-stacks.rule';
 import { GcPressureRule } from './rules/gc-pressure.rule';
 import { RecursiveCallsRule } from './rules/recursive-calls.rule';
+import { IdleTimeRule } from './rules/idle-time.rule';
+import { DeoptMarkersRule } from './rules/deopt-markers.rule';
+import { ModuleAggregationRule } from './rules/module-aggregation.rule';
+import { AsyncGapsRule } from './rules/async-gaps.rule';
 
 const SEVERITY_ORDER: Record<string, number> = { critical: 0, warning: 1, info: 2 };
 
@@ -132,6 +136,10 @@ export class RuleEngineService {
     new DeepCallStacksRule(),
     new GcPressureRule(),
     new RecursiveCallsRule(),
+    new IdleTimeRule(),
+    new DeoptMarkersRule(),
+    new ModuleAggregationRule(),
+    new AsyncGapsRule(),
   ];
 
   analyzeCpuProfile(
