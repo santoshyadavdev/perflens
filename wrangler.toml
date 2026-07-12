@@ -1,8 +1,6 @@
 name = "perflens"
 compatibility_date = "2026-06-30"
-
-[assets]
-directory = "./dist/perflens/browser"
+pages_build_output_dir = "./dist/perflens/browser"
 
 # KV namespace for shared reports (Phase 2)
 # [[kv_namespaces]]
