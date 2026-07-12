@@ -8,7 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "vitest",
     "test:run": "vitest run",
-    "deploy": "ng build && wrangler deploy"
+    "deploy": "ng build && wrangler pages deploy dist/perflens/browser"
   },
   "private": true,
   "packageManager": "npm@11.12.1",
@@ -43,6 +43,7 @@
     "prettier": "^3.8.1",
     "tailwindcss": "^4.3.2",
     "typescript": "~6.0.2",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.9",
+    "wrangler": "^4.110.0"
   }
 }
