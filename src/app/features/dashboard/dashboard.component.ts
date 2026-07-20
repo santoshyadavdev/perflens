@@ -23,6 +23,7 @@ import { TimelineComponent } from './timeline.component';
 import { CpuFlamechartComponent } from './cpu-flamechart.component';
 import { CpuHotFunctionsComponent } from './cpu-hot-functions.component';
 import { CpuDeoptListComponent } from './cpu-deopt-list.component';
+import { ExportDialogComponent } from './export-dialog.component';
 
 const EMPTY_PARSED_TRACE: ParsedTrace = {
   traceEvents: [],
@@ -49,6 +50,7 @@ const EMPTY_PARSED_TRACE: ParsedTrace = {
     CpuFlamechartComponent,
     CpuHotFunctionsComponent,
     CpuDeoptListComponent,
+    ExportDialogComponent,
   ],
   template: `
     <div class="min-h-screen">
@@ -62,13 +64,15 @@ const EMPTY_PARSED_TRACE: ParsedTrace = {
         <div class="flex items-center gap-4 text-sm text-gray-400">
           <button class="hover:text-white transition-colors" disabled>🤖 AI Dive</button>
           <button class="hover:text-white transition-colors" disabled>Share</button>
-          <button class="hover:text-white transition-colors" disabled>Export</button>
+          <button class="hover:text-white transition-colors" (click)="showExportDialog.set(true)">Export</button>
         </div>
       </nav>
 
       @if (result(); as r) {
         <div class="p-5 space-y-5">
-          <app-score-cards [metrics]="r.metrics" />
+          <div id="section-score-cards">
+            <app-score-cards [metrics]="r.metrics" />
+          </div>
 
           <app-tab-panel
             [tabs]="dashboardTabs()"
@@ -216,6 +220,14 @@ const EMPTY_PARSED_TRACE: ParsedTrace = {
           <div class="text-gray-400 animate-pulse">Analyzing trace...</div>
         </div>
       }
+
+      @if (showExportDialog()) {
+        <app-export-dialog
+          [result]="result()!"
+          [fileFormat]="fileFormat()!"
+          (close)="showExportDialog.set(false)"
+        />
+      }
     </div>
   `,
 })
@@ -227,7 +239,8 @@ export class DashboardComponent {
   readonly heapParser = inject(HeapSnapshotParserService);
   readonly cpuParser = inject(CpuProfileParserService);
 
-  private readonly fileFormat = signal<'perf-trace' | 'heap-snapshot' | 'cpu-profile' | null>(null);
+  readonly fileFormat = signal<'perf-trace' | 'heap-snapshot' | 'cpu-profile' | null>(null);
+  showExportDialog = signal(false);
 
   readonly dashboardTabs = computed<TabDef[]>(() => {
     const format = this.fileFormat();

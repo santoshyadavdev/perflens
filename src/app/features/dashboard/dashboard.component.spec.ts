@@ -159,4 +159,33 @@ describe('DashboardComponent (cpu profile)', () => {
     expect(getTabButton('V8 Internals')?.disabled).toBe(true);
     expect(fixture.componentInstance.activeTab()).toBe('cpu-profile');
   });
+
+  it('renders a clickable Export button in the nav', () => {
+    const exportBtn = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
+      (btn: HTMLButtonElement) => btn.textContent?.includes('Export')
+    ) as HTMLButtonElement | undefined;
+    expect(exportBtn).toBeTruthy();
+    expect(exportBtn!.disabled).toBeFalsy();
+  });
+
+  it('shows export dialog when Export button is clicked', () => {
+    const exportBtn = Array.from(fixture.nativeElement.querySelectorAll('button')).find(
+      (btn: HTMLButtonElement) => btn.textContent?.includes('Export')
+    ) as HTMLButtonElement;
+
+    exportBtn.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-export-dialog')).toBeTruthy();
+  });
+
+  it('hides export dialog when close event fires', () => {
+    fixture.componentInstance.showExportDialog.set(true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-export-dialog')).toBeTruthy();
+
+    fixture.componentInstance.showExportDialog.set(false);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-export-dialog')).toBeFalsy();
+  });
 });
