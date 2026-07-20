@@ -3,6 +3,7 @@ import { Subscription } from 'rxjs';
 import { ExportService } from '../../core/services/export.service';
 import { ExportFormat, ExportProgress } from '../../core/models/export.model';
 import { AnalysisResult } from '../../core/models/analysis-result.model';
+import { generateReportFilename, triggerDownload } from '../../core/utils/download';
 
 type DialogState = 'select' | 'progress' | 'complete' | 'error';
 
@@ -162,19 +163,8 @@ export class ExportDialogComponent implements OnDestroy {
 
   downloadResult(): void {
     if (!this.resultBlob) return;
-
-    const extension = this.exportFormat === 'pdf' ? 'pdf' : 'html';
-    const baseName = this.result().fileName.replace(/\.[^.]+$/, '');
-    const downloadName = `${baseName}-perflens-report.${extension}`;
-
-    const url = URL.createObjectURL(this.resultBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = downloadName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const filename = generateReportFilename(this.result().fileName, this.exportFormat);
+    triggerDownload(this.resultBlob, filename);
   }
 
   resetToSelect(): void {
