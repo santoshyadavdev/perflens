@@ -47,7 +47,7 @@ function renderMetricsSection(metrics: MetricScore[]): string {
   if (metrics.length === 0) return '';
 
   const cards = metrics.map(m => `
-    <div class="metric-card metric-${m.rating}">
+    <div class="metric-card metric-${escapeHtml(m.rating)}">
       <div class="metric-name">${escapeHtml(m.shortName)}</div>
       <div class="metric-value">${escapeHtml(m.displayValue)}</div>
       <div class="metric-rating">${escapeHtml(m.rating)}</div>
@@ -62,7 +62,7 @@ function renderActionItemsSection(items: ActionItem[]): string {
 
   const rows = items.map(item => `
     <tr>
-      <td><span class="severity severity-${item.severity}">${item.severity.toUpperCase()}</span></td>
+      <td><span class="severity severity-${escapeHtml(item.severity)}">${escapeHtml(item.severity.toUpperCase())}</span></td>
       <td><span class="metric-tag">${escapeHtml(item.metric)}</span></td>
       <td><strong>${escapeHtml(item.title)}</strong><br><span class="detail">${escapeHtml(item.detail)}</span></td>
       <td class="fix">${escapeHtml(item.fix)}</td>
@@ -83,7 +83,7 @@ function renderCapturedSections(sections: CapturedSection[]): string {
   return sections.map(section => `
     <section class="captured-section">
       <h2>${escapeHtml(section.title)}</h2>
-      <img src="${section.imageDataUrl}" alt="${escapeHtml(section.title)}" style="max-width:100%; height:auto;">
+      <img src="${escapeHtml(section.imageDataUrl)}" alt="${escapeHtml(section.title)}" style="max-width:100%; height:auto;">
     </section>
   `).join('');
 }
@@ -93,7 +93,8 @@ function escapeHtml(str: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function formatFileSize(bytes: number): string {

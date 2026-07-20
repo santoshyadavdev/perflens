@@ -106,4 +106,34 @@ describe('SectionCaptureService', () => {
 
     document.body.removeChild(panel);
   });
+
+  it('captureAllSections aborts mid-flight when signal fires between sections', async () => {
+    const panel1 = document.createElement('div');
+    panel1.id = 'tab-panel-mid1';
+    document.body.appendChild(panel1);
+
+    const panel2 = document.createElement('div');
+    panel2.id = 'tab-panel-mid2';
+    document.body.appendChild(panel2);
+
+    const defs: SectionDefinition[] = [
+      { id: 'mid1', title: 'First', panelSelector: '#tab-panel-mid1' },
+      { id: 'mid2', title: 'Second', panelSelector: '#tab-panel-mid2' },
+    ];
+
+    const controller = new AbortController();
+    const onProgress = vi.fn((_i: number) => {
+      if (_i === 0) controller.abort();
+    });
+
+    await expect(
+      service.captureAllSections(defs, onProgress, controller.signal)
+    ).rejects.toThrow('cancelled');
+
+    // Only the first section's progress should have been reported
+    expect(onProgress).toHaveBeenCalledTimes(1);
+
+    document.body.removeChild(panel1);
+    document.body.removeChild(panel2);
+  });
 });

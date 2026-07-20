@@ -127,6 +127,8 @@ function renderSectionPage(doc: jsPDF, section: CapturedSection): void {
   doc.setTextColor(30, 30, 30);
   doc.text(section.title, MARGIN, MARGIN + 5);
 
+  if (section.width <= 0 || section.height <= 0) return;
+
   const imageY = MARGIN + 12;
   const availableHeight = PAGE_HEIGHT - imageY - MARGIN;
   const aspectRatio = section.width / section.height;

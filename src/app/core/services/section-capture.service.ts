@@ -23,7 +23,14 @@ export class SectionCaptureService {
 
     try {
       await this.waitForRender();
-      const canvas = await html2canvas(panel, CAPTURE_OPTIONS);
+      const canvas = await html2canvas(panel, {
+        ...CAPTURE_OPTIONS,
+        width: panel.scrollWidth,
+        height: panel.scrollHeight,
+        onclone: (_doc: Document, clonedEl: HTMLElement) => {
+          clonedEl.style.overflow = 'visible';
+        },
+      });
       return {
         id: definition.id,
         title: definition.title,
@@ -48,6 +55,9 @@ export class SectionCaptureService {
         throw new Error('Export cancelled');
       }
       onProgress(i, definitions.length, definitions[i].title);
+      if (abortSignal?.aborted) {
+        throw new Error('Export cancelled');
+      }
       const captured = await this.captureSection(definitions[i]);
       results.push(captured);
     }

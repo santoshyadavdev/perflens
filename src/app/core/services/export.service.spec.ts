@@ -93,4 +93,26 @@ describe('ExportService', () => {
     expect(result.phase).toBe('error');
     expect(result.error).toContain('capture failed');
   });
+
+  it('unsubscribing aborts the capture via AbortSignal', async () => {
+    let capturedSignal: AbortSignal | undefined;
+
+    mockCaptureService.captureAllSections.mockImplementation(
+      async (_defs: unknown, _onProgress: unknown, signal: AbortSignal) => {
+        capturedSignal = signal;
+        return new Promise(() => {}); // never resolves
+      },
+    );
+
+    const subscription = service.export('pdf', 'perf-trace', mockResult).subscribe();
+
+    // Allow microtask to start the async pipeline
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(capturedSignal).toBeDefined();
+    expect(capturedSignal!.aborted).toBe(false);
+
+    subscription.unsubscribe();
+    expect(capturedSignal!.aborted).toBe(true);
+  });
 });

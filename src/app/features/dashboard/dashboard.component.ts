@@ -70,7 +70,9 @@ const EMPTY_PARSED_TRACE: ParsedTrace = {
 
       @if (result(); as r) {
         <div class="p-5 space-y-5">
-          <app-score-cards [metrics]="r.metrics" />
+          <div id="section-score-cards">
+            <app-score-cards [metrics]="r.metrics" />
+          </div>
 
           <app-tab-panel
             [tabs]="dashboardTabs()"

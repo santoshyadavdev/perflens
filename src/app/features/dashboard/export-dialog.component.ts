@@ -1,4 +1,4 @@
-import { Component, inject, input, output, signal, OnDestroy } from '@angular/core';
+import { Component, inject, input, output, signal, OnDestroy, ElementRef, viewChild, afterNextRender } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { ExportService } from '../../core/services/export.service';
 import { ExportFormat, ExportProgress } from '../../core/models/export.model';
@@ -12,9 +12,11 @@ type DialogState = 'select' | 'progress' | 'complete' | 'error';
   standalone: true,
   template: `
     <div
+      #dialogBackdrop
       class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
       (click)="onBackdropClick($event)"
       (keydown.escape)="onClose()"
+      tabindex="-1"
       role="dialog"
       aria-modal="true"
       aria-label="Export report"
@@ -124,6 +126,7 @@ type DialogState = 'select' | 'progress' | 'complete' | 'error';
 })
 export class ExportDialogComponent implements OnDestroy {
   private readonly exportService = inject(ExportService);
+  private readonly dialogBackdrop = viewChild<ElementRef<HTMLDivElement>>('dialogBackdrop');
 
   result = input.required<AnalysisResult>();
   fileFormat = input.required<string>();
@@ -136,7 +139,14 @@ export class ExportDialogComponent implements OnDestroy {
   private exportFormat: ExportFormat = 'pdf';
   private subscription: Subscription | null = null;
 
+  constructor() {
+    afterNextRender(() => {
+      this.dialogBackdrop()?.nativeElement.focus();
+    });
+  }
+
   startExport(format: ExportFormat): void {
+    this.subscription?.unsubscribe();
     this.exportFormat = format;
     this.state.set('progress');
 
@@ -175,7 +185,7 @@ export class ExportDialogComponent implements OnDestroy {
   }
 
   onBackdropClick(event: MouseEvent): void {
-    if ((event.target as HTMLElement).classList.contains('fixed')) {
+    if (event.target === event.currentTarget) {
       this.onClose();
     }
   }

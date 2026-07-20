@@ -78,6 +78,16 @@ export class ExportService {
       });
       subscriber.complete();
     } catch (err) {
+      if (abortSignal.aborted) {
+        subscriber.next({
+          phase: 'cancelled',
+          currentStep: 0,
+          totalSteps: 0,
+          percentage: 0,
+        });
+        subscriber.complete();
+        return;
+      }
       const message = err instanceof Error ? err.message : 'Export failed';
       subscriber.next({
         phase: 'error',
