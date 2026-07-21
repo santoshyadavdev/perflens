@@ -37,8 +37,9 @@ export class ScoreCardsComponent {
     return this.metricDiffs().find(d => d.shortName === shortName);
   }
 
-  absDeltaPercent(diff: MetricDiff): number {
-    return Math.abs(diff.deltaPercent);
+  absDeltaPercent(diff: MetricDiff): string {
+    if (diff.deltaPercent === null) return 'N/A';
+    return String(Math.abs(diff.deltaPercent));
   }
 
   cardClasses(rating: Rating): string {

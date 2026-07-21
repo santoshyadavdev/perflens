@@ -115,6 +115,6 @@ describe('TraceComparisonService', () => {
     });
 
     const comparison = service.compare(current, baseline);
-    expect(comparison.metricDiffs[0].deltaPercent).toBe(0);
+    expect(comparison.metricDiffs[0].deltaPercent).toBeNull();
   });
 });

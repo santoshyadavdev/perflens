@@ -118,8 +118,12 @@ export class UploadComponent {
   }
 
   async onSessionDelete(id: string): Promise<void> {
-    await this.historyService.delete(id);
-    await this.loadRecentSessions();
+    try {
+      await this.historyService.delete(id);
+      await this.loadRecentSessions();
+    } catch {
+      // IndexedDB unavailable — silently continue
+    }
   }
 
   private async checkShareUrl(): Promise<void> {

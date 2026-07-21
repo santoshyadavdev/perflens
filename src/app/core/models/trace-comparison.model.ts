@@ -17,6 +17,6 @@ export interface MetricDiff {
   current: MetricScore;
   baseline: MetricScore;
   delta: number;
-  deltaPercent: number;
+  deltaPercent: number | null;
   improved: boolean;
 }

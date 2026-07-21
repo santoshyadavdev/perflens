@@ -2,7 +2,10 @@ import { Injectable } from '@angular/core';
 import { AnalysisResult } from '../models/analysis-result.model';
 import { MetricDiff, TraceComparison } from '../models/trace-comparison.model';
 
-const LOWER_IS_BETTER = new Set(['LCP', 'FCP', 'INP', 'TBT', 'CLS']);
+const LOWER_IS_BETTER = new Set([
+  'LCP', 'FCP', 'INP', 'TBT', 'CLS',
+  'CPU', 'HEAP', 'MEM', 'GRWTH', 'DDOM', 'EVTL', 'CLSR', 'V8',
+]);
 
 @Injectable({ providedIn: 'root' })
 export class TraceComparisonService {
@@ -32,7 +35,7 @@ export class TraceComparisonService {
       const delta = cur.value - base.value;
       const deltaPercent = base.value !== 0
         ? Math.round((delta / base.value) * 100)
-        : 0;
+        : (delta !== 0 ? null : 0);
 
       diffs.push({
         name: cur.name,

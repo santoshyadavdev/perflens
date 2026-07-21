@@ -53,7 +53,7 @@ describe('RecentSessionsComponent', () => {
 
   it('should emit sessionSelect on card click', () => {
     const spy = vi.spyOn(component.sessionSelect, 'emit');
-    const card = fixture.nativeElement.querySelector('[data-testid="session-card"]');
+    const card = fixture.nativeElement.querySelector('[data-testid="session-card"] button');
     card.click();
     expect(spy).toHaveBeenCalledWith(mockSessions[0]);
   });

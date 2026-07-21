@@ -67,11 +67,19 @@ export class SessionHistoryService {
       rawDataStored: rawData != null,
     };
 
-    await this.put(db, SESSIONS_STORE, session);
-
-    if (rawData != null) {
-      await this.putRaw(db, id, rawData);
-    }
+    // Write session metadata and raw data in a single transaction
+    await new Promise<void>((resolve, reject) => {
+      const stores = rawData != null
+        ? [SESSIONS_STORE, RAW_DATA_STORE]
+        : [SESSIONS_STORE];
+      const tx = db.transaction(stores, 'readwrite');
+      tx.objectStore(SESSIONS_STORE).put(session);
+      if (rawData != null) {
+        tx.objectStore(RAW_DATA_STORE).put(rawData, id);
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
 
     await this.evictOldest(db);
 
@@ -110,20 +118,13 @@ export class SessionHistoryService {
 
   async delete(id: string): Promise<void> {
     const db = await this.openDb();
-    await Promise.all([
-      new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(SESSIONS_STORE, 'readwrite');
-        const request = tx.objectStore(SESSIONS_STORE).delete(id);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-      }),
-      new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(RAW_DATA_STORE, 'readwrite');
-        const request = tx.objectStore(RAW_DATA_STORE).delete(id);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-      }),
-    ]);
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction([SESSIONS_STORE, RAW_DATA_STORE], 'readwrite');
+      tx.objectStore(SESSIONS_STORE).delete(id);
+      tx.objectStore(RAW_DATA_STORE).delete(id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
   }
 
   private put(db: IDBDatabase, storeName: string, value: SavedSession): Promise<void> {

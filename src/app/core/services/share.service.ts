@@ -3,6 +3,9 @@ import { AnalysisResult } from '../models/analysis-result.model';
 import { SharePayload, SHARE_HASH_PREFIX, MAX_URL_LENGTH } from '../models/share.model';
 import { triggerDownload } from '../utils/download';
 
+const MAX_DECOMPRESSED_SIZE = 5 * 1024 * 1024; // 5 MB
+const SUPPORTED_FORMATS = new Set(['perf-trace', 'heap-snapshot', 'cpu-profile']);
+
 @Injectable({ providedIn: 'root' })
 export class ShareService {
   async encode(
@@ -40,13 +43,18 @@ export class ShareService {
     const base64 = hash.slice(SHARE_HASH_PREFIX.length);
     const compressed = this.fromBase64Url(base64);
     const json = await this.decompress(compressed);
-    const payload = JSON.parse(json) as SharePayload;
+    const parsed = JSON.parse(json);
 
-    if (payload.v !== 1) {
-      throw new Error(`Unsupported share format version: ${payload.v}`);
+    if (!parsed || typeof parsed !== 'object' || parsed.v !== 1) {
+      throw new Error(`Unsupported share format version: ${parsed?.v}`);
+    }
+    if (typeof parsed.fn !== 'string' || typeof parsed.fs !== 'number' ||
+        typeof parsed.fmt !== 'string' || !SUPPORTED_FORMATS.has(parsed.fmt) ||
+        !Array.isArray(parsed.m) || !Array.isArray(parsed.ai)) {
+      throw new Error('Invalid share payload: missing or malformed required fields');
     }
 
-    return payload;
+    return parsed as SharePayload;
   }
 
   buildPerflensBlob(result: AnalysisResult, format: string): Blob {
@@ -91,8 +99,23 @@ export class ShareService {
       },
     });
     const stream = readable.pipeThrough(new DecompressionStream('gzip'));
-    const response = new Response(stream);
-    return response.text();
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+    let result = '';
+    let totalBytes = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_DECOMPRESSED_SIZE) {
+        reader.cancel();
+        throw new Error('Decompressed payload exceeds maximum allowed size');
+      }
+      result += decoder.decode(value, { stream: true });
+    }
+    result += decoder.decode();
+    return result;
   }
 
   private toBase64Url(data: Uint8Array): string {

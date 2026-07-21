@@ -78,7 +78,9 @@ const EMPTY_PARSED_TRACE: ParsedTrace = {
             <button class="hover:text-white transition-colors" (click)="showComparePicker.set(true)">⚖️ Compare</button>
           }
           <button class="hover:text-white transition-colors" disabled>🤖 AI Dive</button>
-          <button class="hover:text-white transition-colors" (click)="showShareDialog.set(true)">Share</button>
+          @if (result()) {
+            <button class="hover:text-white transition-colors" (click)="showShareDialog.set(true)">Share</button>
+          }
           <button class="hover:text-white transition-colors" (click)="showExportDialog.set(true)">Export</button>
         </div>
       </nav>
@@ -255,7 +257,7 @@ const EMPTY_PARSED_TRACE: ParsedTrace = {
         />
       }
 
-      @if (showShareDialog()) {
+      @if (showShareDialog() && result()) {
         <app-share-dialog
           [result]="result()!"
           [fileFormat]="fileFormat()!"
@@ -292,6 +294,8 @@ export class DashboardComponent {
   showComparePicker = signal(false);
   comparison = signal<TraceComparison | null>(null);
   comparableSessions = signal<SavedSession[]>([]);
+  isLiteResult = signal(false);
+  private currentSessionId: string | null = null;
 
   readonly dashboardTabs = computed<TabDef[]>(() => {
     const format = this.fileFormat();
@@ -299,15 +303,16 @@ export class DashboardComponent {
     const isPerfTrace = format === 'perf-trace';
     const isCpuProfile = format === 'cpu-profile';
     const hasDeoptEvents = (this.cpuProfile()?.deoptEvents.length ?? 0) > 0;
+    const lite = this.isLiteResult();
 
     return [
       { id: 'action-items', label: 'Action Items', icon: '🎯', disabled: !isHeapSnapshot && !isPerfTrace && !isCpuProfile },
-      { id: 'flamegraph', label: 'Flamegraph', icon: '🔥', disabled: !isPerfTrace },
-      { id: 'timeline', label: 'Timeline', icon: '📊', disabled: !isPerfTrace },
-      { id: 'network', label: 'Network', icon: '🌊', disabled: !isPerfTrace },
-      { id: 'memory', label: 'Memory', icon: '🧠', disabled: !isHeapSnapshot },
-      { id: 'cpu-profile', label: 'CPU Profile', icon: '⚡', disabled: !isCpuProfile },
-      { id: 'v8-internals', label: 'V8 Internals', icon: '⚙️', disabled: !isCpuProfile || !hasDeoptEvents },
+      { id: 'flamegraph', label: 'Flamegraph', icon: '🔥', disabled: !isPerfTrace || lite },
+      { id: 'timeline', label: 'Timeline', icon: '📊', disabled: !isPerfTrace || lite },
+      { id: 'network', label: 'Network', icon: '🌊', disabled: !isPerfTrace || lite },
+      { id: 'memory', label: 'Memory', icon: '🧠', disabled: !isHeapSnapshot || lite },
+      { id: 'cpu-profile', label: 'CPU Profile', icon: '⚡', disabled: !isCpuProfile || lite },
+      { id: 'v8-internals', label: 'V8 Internals', icon: '⚙️', disabled: !isCpuProfile || !hasDeoptEvents || lite },
       { id: 'comparison', label: 'Comparison', icon: '⚖️', disabled: !this.comparison() },
     ];
   });
@@ -323,6 +328,7 @@ export class DashboardComponent {
     // Handle restored session from history
     const restored = this.traceStore.restoredSession();
     if (restored) {
+      this.isLiteResult.set(true);
       this.fileFormat.set(restored.format as 'perf-trace' | 'heap-snapshot' | 'cpu-profile');
       this.activeTab.set('action-items');
       this.result.set({
@@ -341,6 +347,7 @@ export class DashboardComponent {
     const nav = this.router.getCurrentNavigation();
     const sharedPayload = nav?.extras?.state?.['sharedPayload'];
     if (sharedPayload) {
+      this.isLiteResult.set(true);
       this.fileFormat.set(sharedPayload.fmt as 'perf-trace' | 'heap-snapshot' | 'cpu-profile');
       this.activeTab.set('action-items');
       this.result.set({
@@ -374,8 +381,7 @@ export class DashboardComponent {
         const parsed = this.parser.parse(file.content);
         const analysis = this.ruleEngine.analyze(parsed, file.name, file.size);
         this.result.set(analysis);
-        this.autoSave(analysis, 'perf-trace');
-        this.loadComparableSessions('perf-trace');
+        this.autoSave(analysis, 'perf-trace').then(() => this.loadComparableSessions('perf-trace'));
       } catch (e) {
         console.error('Failed to analyze trace:', e);
         this.error.set('Failed to analyze trace. The file may be corrupted or in an unsupported format.');
@@ -422,8 +428,7 @@ export class DashboardComponent {
           actionItems,
           parsedTrace: EMPTY_PARSED_TRACE,
           heapResult: { snapshot },
-        }, 'heap-snapshot');
-        this.loadComparableSessions('heap-snapshot');
+        }, 'heap-snapshot').then(() => this.loadComparableSessions('heap-snapshot'));
       });
 
       this.heapParser.parse(file.content as File).catch((e) => {
@@ -488,8 +493,7 @@ export class DashboardComponent {
           actionItems,
           parsedTrace: EMPTY_PARSED_TRACE,
           cpuResult: { profile, comparison },
-        }, 'cpu-profile');
-        this.loadComparableSessions('cpu-profile');
+        }, 'cpu-profile').then(() => this.loadComparableSessions('cpu-profile'));
       });
 
       this.cpuParser.parse(file.content as File).catch((e) => {
@@ -508,7 +512,7 @@ export class DashboardComponent {
 
   private async autoSave(result: AnalysisResult, format: 'perf-trace' | 'heap-snapshot' | 'cpu-profile'): Promise<void> {
     try {
-      await this.historyService.save(result, format);
+      this.currentSessionId = await this.historyService.save(result, format);
     } catch {
       // IndexedDB unavailable — silently continue
     }
@@ -518,7 +522,7 @@ export class DashboardComponent {
     try {
       const sessions = await this.historyService.list();
       this.comparableSessions.set(
-        sessions.filter(s => s.format === format && s.fileName !== this.result()?.fileName),
+        sessions.filter(s => s.format === format && s.id !== this.currentSessionId),
       );
     } catch {
       this.comparableSessions.set([]);

@@ -28,7 +28,7 @@ import { SeverityBadgeComponent } from '../../shared/components/severity-badge.c
                   {{ diff.improved ? '↓' : '↑' }} {{ absDeltaPercent(diff) }}%
                 </span>
                 <span class="text-xs ml-1">
-                  ({{ diff.delta > 0 ? '+' : '' }}{{ formatDelta(diff) }})
+                  ({{ formatDelta(diff) }})
                 </span>
               </div>
             </div>
@@ -106,24 +106,26 @@ export class TraceComparisonComponent {
   comparison = input.required<TraceComparison>();
 
   diffBorderClass(diff: MetricDiff): string {
-    if (Math.abs(diff.deltaPercent) < 1) return 'border-gray-600';
+    if (diff.deltaPercent === null || Math.abs(diff.deltaPercent) < 1) return 'border-gray-600';
     return diff.improved ? 'border-green-500' : 'border-red-500';
   }
 
   deltaTextClass(diff: MetricDiff): string {
-    if (Math.abs(diff.deltaPercent) < 1) return 'text-gray-500';
+    if (diff.deltaPercent === null || Math.abs(diff.deltaPercent) < 1) return 'text-gray-500';
     return diff.improved ? 'text-green-400' : 'text-red-400';
   }
 
-  absDeltaPercent(diff: MetricDiff): number {
-    return Math.abs(diff.deltaPercent);
+  absDeltaPercent(diff: MetricDiff): string {
+    if (diff.deltaPercent === null) return 'N/A';
+    return String(Math.abs(diff.deltaPercent));
   }
 
   formatDelta(diff: MetricDiff): string {
     const unit = diff.current.unit;
+    const sign = diff.delta > 0 ? '+' : '';
     if (unit === 'ms') {
-      return `${diff.delta > 0 ? '+' : ''}${diff.delta}ms`;
+      return `${sign}${diff.delta}ms`;
     }
-    return `${diff.delta > 0 ? '+' : ''}${diff.delta}`;
+    return `${sign}${diff.delta}`;
   }
 }

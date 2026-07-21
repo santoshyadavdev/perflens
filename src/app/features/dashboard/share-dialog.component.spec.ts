@@ -36,7 +36,7 @@ describe('ShareDialogComponent', () => {
   });
 
   it('should render the dialog', () => {
-    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('dialog')).toBeTruthy();
   });
 
   it('should call encode on init and show copy button', async () => {
@@ -61,8 +61,8 @@ describe('ShareDialogComponent', () => {
 
   it('should emit close on backdrop click', () => {
     const spy = vi.spyOn(component.close, 'emit');
-    const backdrop = fixture.nativeElement.querySelector('[role="dialog"]');
-    backdrop.click();
+    const dialog = fixture.nativeElement.querySelector('dialog');
+    dialog.click();
     expect(spy).toHaveBeenCalled();
   });
 });
