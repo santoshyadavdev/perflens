@@ -24,7 +24,7 @@ export interface TraceMetadata {
   traceEndTime: number;
 }
 
-export type FileFormat = 'perf-trace' | 'heap-snapshot' | 'cpu-profile' | 'v8-log' | 'unknown';
+export type FileFormat = 'perf-trace' | 'heap-snapshot' | 'cpu-profile' | 'v8-log' | 'perflens' | 'unknown';
 
 export interface DetectedFile {
   file: File;

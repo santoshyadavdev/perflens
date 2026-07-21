@@ -24,6 +24,14 @@ import { CpuFlamechartComponent } from './cpu-flamechart.component';
 import { CpuHotFunctionsComponent } from './cpu-hot-functions.component';
 import { CpuDeoptListComponent } from './cpu-deopt-list.component';
 import { ExportDialogComponent } from './export-dialog.component';
+import { SessionHistoryService } from '../../core/services/session-history.service';
+import { TraceComparisonService } from '../../core/services/trace-comparison.service';
+import { SavedSession } from '../../core/models/session-history.model';
+import { TraceComparison } from '../../core/models/trace-comparison.model';
+import { ShareDialogComponent } from './share-dialog.component';
+import { ComparePickerComponent } from './compare-picker.component';
+import { TraceComparisonComponent } from './trace-comparison.component';
+import { ToastComponent } from '../../shared/components/toast.component';
 
 const EMPTY_PARSED_TRACE: ParsedTrace = {
   traceEvents: [],
@@ -51,6 +59,10 @@ const EMPTY_PARSED_TRACE: ParsedTrace = {
     CpuHotFunctionsComponent,
     CpuDeoptListComponent,
     ExportDialogComponent,
+    ShareDialogComponent,
+    ComparePickerComponent,
+    TraceComparisonComponent,
+    ToastComponent,
   ],
   template: `
     <div class="min-h-screen">
@@ -62,8 +74,13 @@ const EMPTY_PARSED_TRACE: ParsedTrace = {
           }
         </div>
         <div class="flex items-center gap-4 text-sm text-gray-400">
+          @if (comparableSessions().length > 0) {
+            <button class="hover:text-white transition-colors" (click)="showComparePicker.set(true)">⚖️ Compare</button>
+          }
           <button class="hover:text-white transition-colors" disabled>🤖 AI Dive</button>
-          <button class="hover:text-white transition-colors" disabled>Share</button>
+          @if (result()) {
+            <button class="hover:text-white transition-colors" (click)="showShareDialog.set(true)">Share</button>
+          }
           <button class="hover:text-white transition-colors" (click)="showExportDialog.set(true)">Export</button>
         </div>
       </nav>
@@ -71,7 +88,7 @@ const EMPTY_PARSED_TRACE: ParsedTrace = {
       @if (result(); as r) {
         <div class="p-5 space-y-5">
           <div id="section-score-cards">
-            <app-score-cards [metrics]="r.metrics" />
+            <app-score-cards [metrics]="r.metrics" [metricDiffs]="comparison()?.metricDiffs ?? []" />
           </div>
 
           <app-tab-panel
@@ -210,6 +227,17 @@ const EMPTY_PARSED_TRACE: ParsedTrace = {
               </div>
             }
           </div>
+
+          <div
+            id="tab-panel-comparison"
+            role="tabpanel"
+            aria-labelledby="tab-comparison"
+            [hidden]="activeTab() !== 'comparison'"
+          >
+            @if (activeTab() === 'comparison' && comparison()) {
+              <app-trace-comparison [comparison]="comparison()!" />
+            }
+          </div>
         </div>
       } @else if (error()) {
         <div class="flex items-center justify-center min-h-[60vh]">
@@ -228,6 +256,24 @@ const EMPTY_PARSED_TRACE: ParsedTrace = {
           (close)="showExportDialog.set(false)"
         />
       }
+
+      @if (showShareDialog() && result()) {
+        <app-share-dialog
+          [result]="result()!"
+          [fileFormat]="fileFormat()!"
+          (close)="showShareDialog.set(false)"
+        />
+      }
+
+      @if (showComparePicker()) {
+        <app-compare-picker
+          [sessions]="comparableSessions()"
+          (sessionSelect)="onCompareSelect($event)"
+          (close)="showComparePicker.set(false)"
+        />
+      }
+
+      <app-toast />
     </div>
   `,
 })
@@ -239,8 +285,17 @@ export class DashboardComponent {
   readonly heapParser = inject(HeapSnapshotParserService);
   readonly cpuParser = inject(CpuProfileParserService);
 
+  private readonly historyService = inject(SessionHistoryService);
+  private readonly comparisonService = inject(TraceComparisonService);
+
   readonly fileFormat = signal<'perf-trace' | 'heap-snapshot' | 'cpu-profile' | null>(null);
   showExportDialog = signal(false);
+  showShareDialog = signal(false);
+  showComparePicker = signal(false);
+  comparison = signal<TraceComparison | null>(null);
+  comparableSessions = signal<SavedSession[]>([]);
+  isLiteResult = signal(false);
+  private currentSessionId: string | null = null;
 
   readonly dashboardTabs = computed<TabDef[]>(() => {
     const format = this.fileFormat();
@@ -248,15 +303,17 @@ export class DashboardComponent {
     const isPerfTrace = format === 'perf-trace';
     const isCpuProfile = format === 'cpu-profile';
     const hasDeoptEvents = (this.cpuProfile()?.deoptEvents.length ?? 0) > 0;
+    const lite = this.isLiteResult();
 
     return [
       { id: 'action-items', label: 'Action Items', icon: '🎯', disabled: !isHeapSnapshot && !isPerfTrace && !isCpuProfile },
-      { id: 'flamegraph', label: 'Flamegraph', icon: '🔥', disabled: !isPerfTrace },
-      { id: 'timeline', label: 'Timeline', icon: '📊', disabled: !isPerfTrace },
-      { id: 'network', label: 'Network', icon: '🌊', disabled: !isPerfTrace },
-      { id: 'memory', label: 'Memory', icon: '🧠', disabled: !isHeapSnapshot },
-      { id: 'cpu-profile', label: 'CPU Profile', icon: '⚡', disabled: !isCpuProfile },
-      { id: 'v8-internals', label: 'V8 Internals', icon: '⚙️', disabled: !isCpuProfile || !hasDeoptEvents },
+      { id: 'flamegraph', label: 'Flamegraph', icon: '🔥', disabled: !isPerfTrace || lite },
+      { id: 'timeline', label: 'Timeline', icon: '📊', disabled: !isPerfTrace || lite },
+      { id: 'network', label: 'Network', icon: '🌊', disabled: !isPerfTrace || lite },
+      { id: 'memory', label: 'Memory', icon: '🧠', disabled: !isHeapSnapshot || lite },
+      { id: 'cpu-profile', label: 'CPU Profile', icon: '⚡', disabled: !isCpuProfile || lite },
+      { id: 'v8-internals', label: 'V8 Internals', icon: '⚙️', disabled: !isCpuProfile || !hasDeoptEvents || lite },
+      { id: 'comparison', label: 'Comparison', icon: '⚖️', disabled: !this.comparison() },
     ];
   });
 
@@ -268,6 +325,42 @@ export class DashboardComponent {
   cpuComparison = signal<CpuProfileComparison | null>(null);
 
   constructor() {
+    // Handle restored session from history
+    const restored = this.traceStore.restoredSession();
+    if (restored) {
+      this.isLiteResult.set(true);
+      this.fileFormat.set(restored.format as 'perf-trace' | 'heap-snapshot' | 'cpu-profile');
+      this.activeTab.set('action-items');
+      this.result.set({
+        fileName: restored.fileName,
+        fileSize: restored.fileSize,
+        analyzedAt: new Date(restored.analyzedAt),
+        metrics: restored.metrics,
+        actionItems: restored.actionItems,
+        parsedTrace: EMPTY_PARSED_TRACE,
+      });
+      this.loadComparableSessions(restored.format);
+      return;
+    }
+
+    // Handle shared payload via navigation state
+    const nav = this.router.getCurrentNavigation();
+    const sharedPayload = nav?.extras?.state?.['sharedPayload'];
+    if (sharedPayload) {
+      this.isLiteResult.set(true);
+      this.fileFormat.set(sharedPayload.fmt as 'perf-trace' | 'heap-snapshot' | 'cpu-profile');
+      this.activeTab.set('action-items');
+      this.result.set({
+        fileName: sharedPayload.fn,
+        fileSize: sharedPayload.fs,
+        analyzedAt: new Date(sharedPayload.at),
+        metrics: sharedPayload.m,
+        actionItems: sharedPayload.ai,
+        parsedTrace: EMPTY_PARSED_TRACE,
+      });
+      return;
+    }
+
     if (!this.traceStore.hasFiles()) {
       this.router.navigate(['/']);
       return;
@@ -288,6 +381,7 @@ export class DashboardComponent {
         const parsed = this.parser.parse(file.content);
         const analysis = this.ruleEngine.analyze(parsed, file.name, file.size);
         this.result.set(analysis);
+        this.autoSave(analysis, 'perf-trace').then(() => this.loadComparableSessions('perf-trace'));
       } catch (e) {
         console.error('Failed to analyze trace:', e);
         this.error.set('Failed to analyze trace. The file may be corrupted or in an unsupported format.');
@@ -326,6 +420,15 @@ export class DashboardComponent {
           parsedTrace: EMPTY_PARSED_TRACE,
           heapResult: { snapshot },
         });
+        this.autoSave({
+          fileName: file.name,
+          fileSize: file.size,
+          analyzedAt: new Date(),
+          metrics,
+          actionItems,
+          parsedTrace: EMPTY_PARSED_TRACE,
+          heapResult: { snapshot },
+        }, 'heap-snapshot').then(() => this.loadComparableSessions('heap-snapshot'));
       });
 
       this.heapParser.parse(file.content as File).catch((e) => {
@@ -382,6 +485,15 @@ export class DashboardComponent {
           parsedTrace: EMPTY_PARSED_TRACE,
           cpuResult: { profile, comparison },
         });
+        this.autoSave({
+          fileName: file.name,
+          fileSize: file.size,
+          analyzedAt: new Date(),
+          metrics,
+          actionItems,
+          parsedTrace: EMPTY_PARSED_TRACE,
+          cpuResult: { profile, comparison },
+        }, 'cpu-profile').then(() => this.loadComparableSessions('cpu-profile'));
       });
 
       this.cpuParser.parse(file.content as File).catch((e) => {
@@ -396,5 +508,43 @@ export class DashboardComponent {
 
   setActiveTab(tabId: string): void {
     this.activeTab.set(tabId);
+  }
+
+  private async autoSave(result: AnalysisResult, format: 'perf-trace' | 'heap-snapshot' | 'cpu-profile'): Promise<void> {
+    try {
+      this.currentSessionId = await this.historyService.save(result, format);
+    } catch {
+      // IndexedDB unavailable — silently continue
+    }
+  }
+
+  private async loadComparableSessions(format: string): Promise<void> {
+    try {
+      const sessions = await this.historyService.list();
+      this.comparableSessions.set(
+        sessions.filter(s => s.format === format && s.id !== this.currentSessionId),
+      );
+    } catch {
+      this.comparableSessions.set([]);
+    }
+  }
+
+  onCompareSelect(session: SavedSession): void {
+    this.showComparePicker.set(false);
+    const current = this.result();
+    if (!current) return;
+
+    const baseline: AnalysisResult = {
+      fileName: session.fileName,
+      fileSize: session.fileSize,
+      analyzedAt: new Date(session.analyzedAt),
+      metrics: session.metrics,
+      actionItems: session.actionItems,
+      parsedTrace: EMPTY_PARSED_TRACE,
+    };
+
+    const comp = this.comparisonService.compare(current, baseline);
+    this.comparison.set(comp);
+    this.activeTab.set('comparison');
   }
 }

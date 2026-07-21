@@ -5,6 +5,10 @@ import { isGzipped, readFileText } from './gzip.util';
 @Injectable({ providedIn: 'root' })
 export class FormatDetectorService {
   async detect(file: File): Promise<FileFormat> {
+    if (file.name.endsWith('.perflens')) {
+      return 'perflens';
+    }
+
     const headBuffer = await file.slice(0, 4096).arrayBuffer();
 
     // If gzipped, decompress first then detect the inner content
@@ -32,6 +36,7 @@ export class FormatDetectorService {
       if (/"traceEvents"\s*:/.test(trimmed)) return 'perf-trace';
       if (/"snapshot"\s*:.*"meta"\s*:/s.test(trimmed)) return 'heap-snapshot';
       if (/"nodes"\s*:/.test(trimmed) && /"startTime"\s*:/.test(trimmed)) return 'cpu-profile';
+      if (/"v"\s*:\s*1/.test(trimmed) && /"fn"\s*:/.test(trimmed) && /"fmt"\s*:/.test(trimmed)) return 'perflens';
     }
 
     return 'unknown';

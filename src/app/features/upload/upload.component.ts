@@ -3,11 +3,16 @@ import { Router } from '@angular/router';
 import { FormatDetectorService } from '../../core/parsers/format-detector.service';
 import { TraceStoreService } from '../../core/services/trace-store.service';
 import { readFileText } from '../../core/parsers/gzip.util';
+import { RecentSessionsComponent } from './recent-sessions.component';
+import { SessionHistoryService } from '../../core/services/session-history.service';
+import { ShareService } from '../../core/services/share.service';
+import { SavedSession } from '../../core/models/session-history.model';
+import { SHARE_HASH_PREFIX } from '../../core/models/share.model';
 
 @Component({
   selector: 'app-upload',
   standalone: true,
-  imports: [],
+  imports: [RecentSessionsComponent],
   template: `
     <div class="min-h-screen flex flex-col items-center justify-center px-4">
       <div class="text-center mb-8">
@@ -41,7 +46,7 @@ import { readFileText } from '../../core/parsers/gzip.util';
         } @else {
           <div class="text-emerald-400 mb-2">📁 Drag & drop or click to browse</div>
           <p class="text-gray-500 text-sm">
-            Supports .json/.json.gz traces, .heapsnapshot, .cpuprofile, V8 .log
+            Supports .json/.json.gz traces, .heapsnapshot, .cpuprofile, V8 .log, .perflens
           </p>
           <p class="text-gray-600 text-xs mt-2">Multiple files supported for comparison</p>
         }
@@ -51,7 +56,7 @@ import { readFileText } from '../../core/parsers/gzip.util';
         #fileInput
         type="file"
         multiple
-        accept=".json,.json.gz,.gz,.heapsnapshot,.cpuprofile,.log"
+        accept=".json,.json.gz,.gz,.heapsnapshot,.cpuprofile,.log,.perflens"
         class="hidden"
         (change)="onFileInputChange($event)"
       />
@@ -72,6 +77,12 @@ import { readFileText } from '../../core/parsers/gzip.util';
           📶 Works offline
         </div>
       </div>
+
+      <app-recent-sessions
+        [sessions]="recentSessions()"
+        (sessionSelect)="onSessionSelect($event)"
+        (sessionDelete)="onSessionDelete($event)"
+      />
     </div>
   `,
 })
@@ -79,10 +90,66 @@ export class UploadComponent {
   private readonly router = inject(Router);
   private readonly formatDetector = inject(FormatDetectorService);
   private readonly traceStore = inject(TraceStoreService);
+  private readonly historyService = inject(SessionHistoryService);
+  private readonly shareService = inject(ShareService);
 
   isDragOver = signal(false);
   isProcessing = signal(false);
   error = signal<string | null>(null);
+  recentSessions = signal<SavedSession[]>([]);
+
+  constructor() {
+    this.loadRecentSessions();
+    this.checkShareUrl();
+  }
+
+  private async loadRecentSessions(): Promise<void> {
+    try {
+      const sessions = await this.historyService.list();
+      this.recentSessions.set(sessions);
+    } catch {
+      // IndexedDB unavailable — silently continue
+    }
+  }
+
+  async onSessionSelect(session: SavedSession): Promise<void> {
+    this.traceStore.storeFromSession(session);
+    this.router.navigate(['/dashboard']);
+  }
+
+  async onSessionDelete(id: string): Promise<void> {
+    try {
+      await this.historyService.delete(id);
+      await this.loadRecentSessions();
+    } catch {
+      // IndexedDB unavailable — silently continue
+    }
+  }
+
+  private async checkShareUrl(): Promise<void> {
+    const hash = location.hash;
+    if (!hash.startsWith(SHARE_HASH_PREFIX)) return;
+
+    this.isProcessing.set(true);
+    try {
+      const payload = await this.shareService.decode(hash);
+      this.traceStore.store([{
+        name: payload.fn,
+        size: payload.fs,
+        format: payload.fmt,
+        content: null,
+      }]);
+      history.replaceState(null, '', location.pathname);
+      this.router.navigate(['/dashboard'], {
+        state: { sharedPayload: payload },
+      });
+    } catch (e) {
+      console.error('Failed to decode share URL:', e);
+      this.error.set('Invalid share link. The data may be corrupted or from an incompatible version.');
+      this.isProcessing.set(false);
+      history.replaceState(null, '', location.pathname);
+    }
+  }
 
   onDragOver(event: DragEvent): void {
     event.preventDefault();
