@@ -41,7 +41,7 @@ import { readFileText } from '../../core/parsers/gzip.util';
         } @else {
           <div class="text-emerald-400 mb-2">📁 Drag & drop or click to browse</div>
           <p class="text-gray-500 text-sm">
-            Supports .json/.json.gz traces, .heapsnapshot, .cpuprofile, V8 .log
+            Supports .json/.json.gz traces, .heapsnapshot, .cpuprofile, V8 .log, .perflens
           </p>
           <p class="text-gray-600 text-xs mt-2">Multiple files supported for comparison</p>
         }
@@ -51,7 +51,7 @@ import { readFileText } from '../../core/parsers/gzip.util';
         #fileInput
         type="file"
         multiple
-        accept=".json,.json.gz,.gz,.heapsnapshot,.cpuprofile,.log"
+        accept=".json,.json.gz,.gz,.heapsnapshot,.cpuprofile,.log,.perflens"
         class="hidden"
         (change)="onFileInputChange($event)"
       />
