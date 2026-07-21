@@ -1,5 +1,6 @@
 import { Component, input } from '@angular/core';
 import { MetricScore, Rating } from '../../core/models/metric-score.model';
+import { MetricDiff } from '../../core/models/trace-comparison.model';
 
 @Component({
   selector: 'app-score-cards',
@@ -16,7 +17,13 @@ import { MetricScore, Rating } from '../../core/models/metric-score.model';
           <div class="text-2xl font-bold mt-1" [class]="valueColor(metric.rating)">
             {{ metric.displayValue }}
           </div>
-          <div class="text-gray-500 text-xs mt-1">{{ ratingLabel(metric.rating) }}</div>
+          @if (getDiff(metric.shortName); as diff) {
+            <div class="text-xs mt-1 font-semibold" [class]="diff.improved ? 'text-green-400' : 'text-red-400'">
+              {{ diff.improved ? '↓' : '↑' }} {{ absDeltaPercent(diff) }}%
+            </div>
+          } @else {
+            <div class="text-gray-500 text-xs mt-1">{{ ratingLabel(metric.rating) }}</div>
+          }
         </div>
       }
     </div>
@@ -24,6 +31,15 @@ import { MetricScore, Rating } from '../../core/models/metric-score.model';
 })
 export class ScoreCardsComponent {
   metrics = input.required<MetricScore[]>();
+  metricDiffs = input<MetricDiff[]>([]);
+
+  getDiff(shortName: string): MetricDiff | undefined {
+    return this.metricDiffs().find(d => d.shortName === shortName);
+  }
+
+  absDeltaPercent(diff: MetricDiff): number {
+    return Math.abs(diff.deltaPercent);
+  }
 
   cardClasses(rating: Rating): string {
     const base = 'bg-[#1a1f2e] border-l-[3px]';
