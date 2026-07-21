@@ -10,12 +10,12 @@ import { AnalysisResult } from '../../core/models/analysis-result.model';
       #dialogEl
       class="fixed inset-0 bg-transparent p-0 m-0 max-w-none max-h-none w-full h-full"
       style="background: transparent;"
+      aria-labelledby="share-dialog-title"
       (close)="close.emit()"
-      (click)="onBackdropClick($event)"
     >
-      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-        <div class="bg-[#161b26] rounded-xl p-6 w-full max-w-md shadow-xl border border-gray-800">
-          <h2 class="text-lg font-semibold text-white mb-4">Share Analysis</h2>
+      <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" (click)="onBackdropClick($event)">
+        <div class="bg-[#161b26] rounded-xl p-6 w-full max-w-md shadow-xl border border-gray-800" (click)="$event.stopPropagation()">
+          <h2 id="share-dialog-title" class="text-lg font-semibold text-white mb-4">Share Analysis</h2>
 
           @if (loading()) {
             <div class="text-gray-400 animate-pulse py-4 text-center">Generating link...</div>

@@ -4,7 +4,7 @@ import { SharePayload, SHARE_HASH_PREFIX, MAX_URL_LENGTH } from '../models/share
 import { triggerDownload } from '../utils/download';
 
 const MAX_DECOMPRESSED_SIZE = 5 * 1024 * 1024; // 5 MB
-const SUPPORTED_FORMATS = new Set(['perf-trace', 'heap-snapshot', 'cpu-profile']);
+const SUPPORTED_FORMATS = new Set(['perf-trace', 'heap-snapshot', 'cpu-profile', 'v8-log']);
 
 @Injectable({ providedIn: 'root' })
 export class ShareService {
@@ -52,6 +52,28 @@ export class ShareService {
         typeof parsed.fmt !== 'string' || !SUPPORTED_FORMATS.has(parsed.fmt) ||
         !Array.isArray(parsed.m) || !Array.isArray(parsed.ai)) {
       throw new Error('Invalid share payload: missing or malformed required fields');
+    }
+
+    if (parsed.at !== undefined && typeof parsed.at !== 'string') {
+      throw new Error('Invalid share payload: malformed analyzedAt');
+    }
+
+    // Validate each metric entry
+    for (const metric of parsed.m) {
+      if (!metric || typeof metric !== 'object' ||
+          typeof metric.name !== 'string' || typeof metric.shortName !== 'string' ||
+          typeof metric.value !== 'number' || typeof metric.displayValue !== 'string' ||
+          typeof metric.rating !== 'string') {
+        throw new Error('Invalid share payload: malformed metric entry');
+      }
+    }
+
+    // Validate each action item entry
+    for (const item of parsed.ai) {
+      if (!item || typeof item !== 'object' ||
+          typeof item.title !== 'string' || typeof item.severity !== 'string') {
+        throw new Error('Invalid share payload: malformed action item entry');
+      }
     }
 
     return parsed as SharePayload;

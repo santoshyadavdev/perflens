@@ -67,21 +67,36 @@ export class SessionHistoryService {
       rawDataStored: rawData != null,
     };
 
-    // Write session metadata and raw data in a single transaction
+    // Write session metadata, raw data, and evict excess in a single transaction
     await new Promise<void>((resolve, reject) => {
-      const stores = rawData != null
-        ? [SESSIONS_STORE, RAW_DATA_STORE]
-        : [SESSIONS_STORE];
-      const tx = db.transaction(stores, 'readwrite');
-      tx.objectStore(SESSIONS_STORE).put(session);
+      const tx = db.transaction([SESSIONS_STORE, RAW_DATA_STORE], 'readwrite');
+      const sessionsStore = tx.objectStore(SESSIONS_STORE);
+      const rawDataStore = tx.objectStore(RAW_DATA_STORE);
+
+      sessionsStore.put(session);
       if (rawData != null) {
-        tx.objectStore(RAW_DATA_STORE).put(rawData, id);
+        rawDataStore.put(rawData, id);
       }
+
+      // Evict oldest sessions within the same transaction
+      const allRequest = sessionsStore.getAll();
+      allRequest.onsuccess = () => {
+        const all = allRequest.result as SavedSession[];
+        if (all.length > MAX_SESSIONS) {
+          const sorted = all.sort(
+            (a, b) => new Date(a.analyzedAt).getTime() - new Date(b.analyzedAt).getTime(),
+          );
+          const excess = sorted.slice(0, all.length - MAX_SESSIONS);
+          for (const old of excess) {
+            sessionsStore.delete(old.id);
+            rawDataStore.delete(old.id);
+          }
+        }
+      };
+
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
-
-    await this.evictOldest(db);
 
     return id;
   }
@@ -127,24 +142,6 @@ export class SessionHistoryService {
     });
   }
 
-  private put(db: IDBDatabase, storeName: string, value: SavedSession): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readwrite');
-      const request = tx.objectStore(storeName).put(value);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  private putRaw(db: IDBDatabase, key: string, value: unknown): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(RAW_DATA_STORE, 'readwrite');
-      const request = tx.objectStore(RAW_DATA_STORE).put(value, key);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  }
-
   private getAll(db: IDBDatabase): Promise<SavedSession[]> {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(SESSIONS_STORE, 'readonly');
@@ -152,19 +149,5 @@ export class SessionHistoryService {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
-  }
-
-  private async evictOldest(db: IDBDatabase): Promise<void> {
-    const all = await this.getAll(db);
-    if (all.length <= MAX_SESSIONS) return;
-
-    const sorted = all.sort(
-      (a, b) => new Date(a.analyzedAt).getTime() - new Date(b.analyzedAt).getTime(),
-    );
-    const toRemove = sorted.slice(0, all.length - MAX_SESSIONS);
-
-    for (const session of toRemove) {
-      await this.delete(session.id);
-    }
   }
 }

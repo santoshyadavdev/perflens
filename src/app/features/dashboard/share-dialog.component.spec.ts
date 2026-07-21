@@ -61,8 +61,8 @@ describe('ShareDialogComponent', () => {
 
   it('should emit close on backdrop click', () => {
     const spy = vi.spyOn(component.close, 'emit');
-    const dialog = fixture.nativeElement.querySelector('dialog');
-    dialog.click();
+    const overlay = fixture.nativeElement.querySelector('dialog > div');
+    overlay.click();
     expect(spy).toHaveBeenCalled();
   });
 });
